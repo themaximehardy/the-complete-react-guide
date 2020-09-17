@@ -1,0 +1,12 @@
+{
+  "editor.fontSize": 14,
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.formatOnSave": true
+  },
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 2
+}
