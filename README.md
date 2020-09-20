@@ -7,7 +7,7 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 1   | [ Getting Started ](01-Getting-Started/README.md)                                                     |
 | 2   | [ Refreshing Next Generation JavaScript (Optional) ](02-Refreshing-Next-Generation-JS/README.md)      |
 | 3   | [ Understanding the Base Features & Syntax ](03-Understanding-the-Base-Features-and-Syntax/README.md) |
-| 4   | [ Working with Lists and Conditionals ]()                                                             |
+| 4   | [ Working with Lists and Conditionals ](04-Working-with-Lists-and-Conditionals/README.md)             |
 | 5   | [ Styling React Components & Elements ]()                                                             |
 | 6   | [ Debugging React Apps ]()                                                                            |
 | 7   | [ Diving Deeper into Components & React Internals ]()                                                 |

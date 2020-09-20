@@ -861,4 +861,4 @@ class App extends Component {
 export default App;
 ```
 
-### 26. Assignment 1: Time to Practice – The Base Syntax
+### 26. Assignment 1 – The Base Syntax
