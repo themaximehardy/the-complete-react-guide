@@ -8,7 +8,7 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 2   | [ Refreshing Next Generation JavaScript (Optional) ](02-Refreshing-Next-Generation-JS/README.md)      |
 | 3   | [ Understanding the Base Features & Syntax ](03-Understanding-the-Base-Features-and-Syntax/README.md) |
 | 4   | [ Working with Lists and Conditionals ](04-Working-with-Lists-and-Conditionals/README.md)             |
-| 5   | [ Styling React Components & Elements ]()                                                             |
+| 5   | [ Styling React Components & Elements ](05-Styling-React-Components-and-Elements/README.md)           |
 | 6   | [ Debugging React Apps ]()                                                                            |
 | 7   | [ Diving Deeper into Components & React Internals ]()                                                 |
 | 8   | [ A Real App: The Burger Builder (Basic Version) ]()                                                  |
