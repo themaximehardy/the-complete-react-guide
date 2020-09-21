@@ -395,8 +395,175 @@ export default App;
 
 Styled components is great but in the same time, it mixes css and JavaScript in the same file make things a bit less readable, we have extra code and porr IDE support when we write our css. It would be great to have another way to scope our style to our components. Writing styles which only apply to a specific component instead of the entire application.
 
+CSS module is part of the build process. It allows us to move code in css files which we import and it stay component scoped (and not global).
+
+Can we implement dynamic style changes? (see the example below).
+
 Let's see **CSS modules**. We need to tweak the config to make it work.
 
+`yarn eject` then go to `config/webpack.config.dev.js` and `config/webpack.config.prod.js`
+
+```js
+//...
+{
+  test: /\.css$/,
+  use: [
+    require.resolve('style-loader'),
+    {
+      loader: require.resolve('css-loader'),
+      options: {
+        importLoaders: 1,
+        modules: true, // add this, which enable CSS modules feature
+        localIdentName: '[name]__[local]__[hash:base64:5]' // add this to dynamically generate unique css class name
+      },
+    },
+  ]
+}
+//...
+```
+
+Then, `App.css`
+
+```css
+.App {
+  text-align: center;
+}
+
+.red {
+  color: red;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.Button {
+  background-color: green;
+  color: white;
+  font: inherit;
+  border: 1px solid blue;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.Button:hover {
+  background-color: lightgreen;
+  color: black;
+}
+
+.Button.Red {
+  background-color: red;
+}
+
+.Button.Red:hover {
+  background-color: salmon;
+}
+```
+
+```js
+// src/App.js
+import React, { Component } from 'react';
+import Person from './Person/Person';
+import classes from './App.css'; // now we import it like this
+
+class App extends Component {
+  state = {
+    //...
+  };
+
+  //...
+
+  render() {
+    let persons = null;
+    let btnClass = [classes.Button]; // this is how we get a specific class from the css
+
+    if (this.state.showPersons) {
+      persons = (
+        <div>
+          {this.state.persons.map(({ id, name, age }, index) => {
+            return (
+              <Person
+                key={id}
+                click={() => this.deletePersonHandler(index)}
+                name={name}
+                age={age}
+                changed={(event) => this.nameChangedHandler(event, id)}
+              />
+            );
+          })}
+        </div>
+      );
+      btnClass.push(classes.Red); // dynamically change the value here
+    }
+
+    let assignedClasses = [];
+    if (this.state.persons.length <= 2) {
+      assignedClasses.push(classes.red); // red
+    }
+
+    if (this.state.persons.length <= 1) {
+      assignedClasses.push(classes.bold); // bold
+    }
+
+    return (
+      <div className={classes.App}>
+        <h1>Hi, I'm a React App!</h1>
+        <p className={assignedClasses.join(' ')}>This is really working!</p>
+        <button
+          className={btnClass.join(' ')}
+          alt={this.state.showPersons}
+          onClick={this.togglePersonsHandler}
+        >
+          Switch Name
+        </button>
+        {persons}
+      </div>
+    );
+  }
+}
+
+export default App;
+```
+
 ### 11. CSS Modules & Media Queries
+
+CSS modules offers us to keep our files (JS and CSS) separated with at the same time the power of scoping css to certain components.
+
+```css
+.Person {
+  width: 60%;
+  margin: 10px auto;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 3px #ccc;
+  padding: 16px;
+  text-align: center;
+}
+
+@media (min-width: 500px) {
+  .Person {
+    width: 450px;
+  }
+}
+```
+
+```js
+// src/Person.js
+import React from 'react';
+import classes from './Person.css';
+
+const person = (props) => {
+  return (
+    <div className={classes.Person}>
+      <p onClick={props.click}>
+        I'm a {props.name} and I'm {props.age} years old!
+      </p>
+      <p>{props.children}</p>
+      <input type="text" onChange={props.changed} value={props.name} />
+    </div>
+  );
+};
+
+export default person;
+```
 
 ### 12. More on CSS Modules
