@@ -55,7 +55,7 @@ export default persons;
 import React from 'react';
 import classes from './Cockpit.css';
 
-const Cockpit = (props) => {
+const cockpit = (props) => {
   let btnClass = '';
 
   if (props.showPersons) {
@@ -83,7 +83,7 @@ const Cockpit = (props) => {
   );
 };
 
-export default Cockpit;
+export default cockpit;
 ```
 
 ```js
@@ -348,7 +348,7 @@ componentDidUpdate() {
 import React, {useEffect} from 'react';
 import classes from './Cockpit.css';
 
-const Cockpit = (props) => {
+const cockpit = (props) => {
   useEffect(() => {
     console.log('[Cockpit.js] useEffect')
     // Http req...
@@ -363,7 +363,7 @@ const Cockpit = (props) => {
   );
 };
 
-export default Cockpit;
+export default cockpit;
 ```
 
 `useEffect` is `componentDidMount` and `componentDidUpdate` combined in one effect.
@@ -764,10 +764,273 @@ export default withClass(Person, classes.Person);
 
 ### 26. Using Refs
 
+What do we do if we want to get access to a specific JSX element (with any JSX element)? For example, how can we render all the `Person` and focus on the last input.
+
+On any element we can add a special `ref` keyword. `ref` is like a key, a special property we can pass into any component. It is detected and understood by React.
+
+`this.inputElement` is now a global property, available everywhere in our component. Accessible by `componentDidMount()` which use it to add a focus.
+
+```js
+// src/components/Persons/Person/Person.js
+import React, { Component } from 'react';
+import classes from './Person.css';
+import Aux from '../../../hoc/Aux';
+import withClass from '../../../hoc/WithClass';
+
+class Person extends Component {
+  //...
+  componentDidMount() {
+    this.inputElement.focus();
+  }
+
+  render() {
+    return (
+      <Aux>
+        <p onClick={this.props.click}>
+          I'm a {this.props.name} and I'm {this.props.age} years old!
+        </p>
+        <p>{this.props.children}</p>
+        <input
+          ref={(inputEl) => {
+            this.inputElement = inputEl; // this.inputElement is now a global property
+          }}
+          type="text"
+          onChange={this.props.changed}
+          value={this.props.name}
+        />
+      </Aux>
+    );
+  }
+}
+
+export default withClass(Person, classes.Person);
+```
+
+But since React 16.3, we have another way of setting up a reference and that includes the constructor.
+
+```js
+import React, { Component } from 'react';
+import classes from './Person.css';
+import Aux from '../../../hoc/Aux';
+import withClass from '../../../hoc/WithClass';
+import PropTypes from 'prop-types';
+
+class Person extends Component {
+  constructor(props) {
+    super(props)
+    this.inputElementRef = React.createRef();
+  }
+  //...
+  componentDidMount() {
+    this.inputElementRef.current.focus();
+  }
+
+  render() {
+    console.log('[Person.js] rendering...');
+    return (
+      <Aux>
+        {...}
+        <input
+          ref={this.inputElementRef} // the other way to set up a ref
+          type="text"
+          onChange={this.props.changed}
+          value={this.props.name}
+        />
+      </Aux>
+    );
+  }
+}
+
+Person.propTypes = {
+  click: PropTypes.func.isRequired,
+  name: PropTypes.string.isRequired,
+  age: PropTypes.number.isRequired,
+  changed: PropTypes.func.isRequired,
+};
+
+export default withClass(Person, classes.Person);
+
+```
+
 ### 27. Refs with React Hooks
+
+```js
+import React, { useEffect, useRef } from 'react';
+import classes from './Cockpit.css';
+
+const cockpit = (props) => {
+  const toggleBtnRef = useRef(); // we need to use a React Hook
+
+  useEffect(() => {
+    toggleBtnRef.current.click(); // we need to set up after it render the first time to initialise the ref
+  }, []);
+  //...
+  return (
+    <div className={classes.Cockpit}>
+      <h1>{props.title}</h1>
+      <p className={assignedClasses.join(' ')}>This is really working!</p>
+      <button ref={toggleBtnRef} className={btnClass} onClick={props.clicked}>
+        Toggle Person
+      </button>
+    </div>
+  );
+};
+
+export default React.memo(cockpit);
+```
 
 ### 28. Understanding Prop Chain Problems
 
+It is easy to pass `props` from component to component. The issue, it leads to extra redundancy and it makes our components a bit less reusable because wherever we're using the forwarder component... But since React 16.8 we have `Context` which help us solve this problem.
+
+When you need to pass certain data/state in multiple components and **we don't want to pass that data/state across multiple layers of components** just to get it from component A (at the top) to component D (at the very bottom) when the components B, C in between don't really care about it and that's exactly the use case here.
+
 ### 29. Using the Context API
 
+`React.createContext()` allows us to **initialize our context** with a **default value** because what the context is in the end, it is a **globally available JavaScript (object, array, string, number,...)** (where we decide where it is available).
+
+```js
+// src/context/auth-context.js
+import React from 'react';
+
+const authContext = React.createContext({
+  authenticated: false,
+  login: () => {},
+});
+
+export default authContext;
+```
+
+Then, we are going to import our new created context and then wrap everything (via `<AuthContext.Provider>{...}</AuthContext.Provider>`) where we want to be able to access this context later on.
+
+```js
+// src/containers/App.js
+import React, { Component } from 'react';
+import Persons from '../components/Persons/Persons';
+import Cockpit from '../components/Cockpit/Cockpit';
+//...
+import AuthContext from '../context/auth-context'; // import
+
+class App extends Component {
+  state = {
+    //...
+  };
+  //...
+  render() {
+    return (
+      <Aux>
+        <AuthContext.Provider
+          value={{
+            authenticated: this.state.authenticated,
+            login: this.loginHandler,
+          }}
+        >
+          <Cockpit
+            title={this.props.appTitle}
+            personsLength={this.state.persons.length}
+            showPersons={this.state.showPersons}
+            clicked={this.togglePersonsHandler}
+          />
+
+          {this.state.showPersons && (
+            <Persons
+              persons={this.state.persons}
+              clicked={this.deletePersonHandler}
+              changed={this.nameChangedHandler}
+            />
+          )}
+        </AuthContext.Provider>
+      </Aux>
+    );
+  }
+}
+
+export default withClass(App, classes.App);
+```
+
+_Note: React will re-render when `state` or `props` change. So only changing something in a `context` object **would not cause a re-render cycle and therefore this is not enough**._
+
+To **get access to the context** value we need to **consume** it (after importing it) – `<AuthContext.Consumer>{(context) => {...}}</AuthContext.Consumer>` (note, we can't wrap our consumer in between JSX, we **HAVE TO return a function**!).
+
+```js
+import React, { Component } from 'react';
+//...
+import AuthContext from '../../../context/auth-context';
+
+class Person extends Component {
+  //...
+  render() {
+    return (
+      <Aux>
+        <AuthContext.Consumer>
+          {(context) =>
+            context.authenticated ? <p>Authenticated</p> : <p>Please log in!</p>
+          }
+        </AuthContext.Consumer>
+        <p onClick={this.props.click}>
+          I'm a {this.props.name} and I'm {this.props.age} years old!
+        </p>
+        <p>{this.props.children}</p>
+        <input
+          ref={this.inputElementRef}
+          type="text"
+          onChange={this.props.changed}
+          value={this.props.name}
+        />
+      </Aux>
+    );
+  }
+}
+//...
+export default withClass(Person, classes.Person);
+```
+
+```js
+import React, { useEffect, useRef } from 'react';
+import classes from './Cockpit.css';
+import AuthContext from '../../context/auth-context';
+
+const cockpit = (props) => {
+  //...
+  return (
+    <div className={classes.Cockpit}>
+      <h1>{props.title}</h1>
+      <p className={assignedClasses.join(' ')}>This is really working!</p>
+      <button ref={toggleBtnRef} className={btnClass} onClick={props.clicked}>
+        Toggle Person
+      </button>
+      <AuthContext.Consumer>
+        {(context) => <button onClick={context.login}>Log in</button>}
+      </AuthContext.Consumer>
+    </div>
+  );
+};
+
+export default React.memo(cockpit);
+```
+
 ### 30. contextType & useContext()
+
+In **class-based components** and only there, we can use an **alternative pattern** to using that `<AuthContext.Consumer>`. Because the code might be a bit verbose and can be tricky to wrap our head around when we see it for the first time. But also if we want to have access to our context outside of our JSX.
+
+We can add a special **static property** named `contextType`.
+
+```js
+static contextType = AuthContext;
+
+console.log(this.context.authenticated);
+```
+
+_Note: `static` means it can be accessed from outside without the need to instantiate an object based on this class first and React will access contextType for us._
+
+This allows React to **automatically connect** this class-based component to our context behind the scenes and it gives us a new property in this component. This allows us to **get access to our context** even in places like `componentDidMount` **where we previously couldn't**.
+
+**In functional component we are also cover with Hooks with `useContext`!**
+
+```js
+const authContext = useContext(AuthContext);
+
+console.log(authContext.authenticated);
+```
+
+The **Context API** is all about **managing data across components without the need to pass data around with props**.
