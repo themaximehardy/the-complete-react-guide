@@ -12,9 +12,9 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 6   | [ Debugging React Apps ](06-Debugging-React-Apps/README.md)                                                         |
 | 7   | [ Diving Deeper into Components & React Internals ](07-Diving-Deeper-into-Components-and-React-Internals/README.md) |
 | 8   | [ A Real App: The Burger Builder (Basic Version) ]()                                                                |
-| 9   | [ Reaching out to the Web (Http / Ajax) ]()                                                                         |
+| 9   | [ Reaching out to the Web (Http / Ajax) ](09-Reaching-out-to-the-Web/README.md)                                     |
 | 10  | [ Burger Builder Project: Accessing a Server ]()                                                                    |
-| 11  | [ Multi-Page-Feeling in a Single-Page-App: Routing ]()                                                              |
+| 11  | [ Multi-Page-Feeling in a Single-Page-App: Routing ](11-Multi-Page-Feeling-in-a-SPA-Routing/README.md)              |
 | 12  | [ Adding Routing to our Burger Project ]()                                                                          |
 | 13  | [ Forms and Form Validation ]()                                                                                     |
 | 14  | [ Redux ]()                                                                                                         |
