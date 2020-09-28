@@ -1,0 +1,23 @@
+.App nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.App nav li {
+  display: inline-block;
+  margin: 20px;
+}
+
+.App nav a {
+  text-decoration: none;
+  color: black;
+}
+
+.App nav a:hover,
+.App nav a:active,
+.App nav a.active {
+  color: #fa923f;
+}
