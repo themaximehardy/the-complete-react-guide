@@ -11,7 +11,7 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 5   | [ Styling React Components & Elements ](05-Styling-React-Components-and-Elements/README.md)                         |
 | 6   | [ Debugging React Apps ](06-Debugging-React-Apps/README.md)                                                         |
 | 7   | [ Diving Deeper into Components & React Internals ](07-Diving-Deeper-into-Components-and-React-Internals/README.md) |
-| 8   | [ A Real App: The Burger Builder (Basic Version) ]()                                                                |
+| 8   | [ A Real App: The Burger Builder (Basic Version) ](08-A-Real-App--The-Burger-Builder/README.md)                     |
 | 9   | [ Reaching out to the Web (Http / Ajax) ](09-Reaching-out-to-the-Web/README.md)                                     |
 | 10  | [ Burger Builder Project: Accessing a Server ]()                                                                    |
 | 11  | [ Multi-Page-Feeling in a Single-Page-App: Routing ](11-Multi-Page-Feeling-in-a-SPA-Routing/README.md)              |

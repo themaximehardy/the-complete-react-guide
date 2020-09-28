@@ -12,6 +12,8 @@ Alternatives to the manual approach taken in this course:
 
 ### 1. Introduction
 
+We're going to have a look at forms and form validation and how we actually may handle our contact data form in the burger application with ease.
+
 ### 2. Analyzing the App
 
 ### 3. Create a Custom Dynamic Input Component
