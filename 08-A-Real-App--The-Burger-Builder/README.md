@@ -42,43 +42,988 @@ We're going to use a styling solution named "**CSS modules**". In more recent pr
 
 ### 6. Setting up the Project
 
+```sh
+yarn install
+npm run eject
+```
+
+```js
+// config/webpack.config.dev.js
+//...
+{
+  test: /\.css$/,
+  use: [
+    require.resolve('style-loader'),
+    {
+      loader: require.resolve('css-loader'),
+      options: {
+        importLoaders: 1,
+        modules: true, // ADD
+        localIdentName: '[name]__[local]__[hash:base64:5]', // ADD
+      },
+    },
+  //...
+//...
+```
+
+```js
+// config/webpack.config.prod.js
+//...
+{
+  test: /\.css$/,
+  loader: ExtractTextPlugin.extract(
+    Object.assign(
+      {
+        fallback: {
+          loader: require.resolve('style-loader'),
+          options: {
+            hmr: false,
+          },
+        },
+        use: [
+          {
+            loader: require.resolve('css-loader'),
+            options: {
+              importLoaders: 1,
+              minimize: true,
+              sourceMap: shouldUseSourceMap,
+              modules: true, // ADD
+              localIdentName: '[name]__[local]__[hash:base64:5]', // ADD
+            },
+          },
+        //...
+      //...
+    //...
+  //...
+//...
+```
+
 ### 7. Creating a Layout Component
+
+Let's create 2 sub-folders: `/components` and `/containers`. **containers** are **stateful components** (= components created with the class keyword or functional components using `useState` and components going into the **components** folder are **dumb** or **presentational** components that don't manage state.
+
+```js
+// src/hoc/Aux.js
+const aux = (props) => props.children;
+
+export default aux;
+```
+
+```js
+// src/components/Layout/Layout.js
+import React from 'react';
+import Aux from '../../hoc/Aux';
+
+const Layout = (props) => {
+  return (
+    <Aux>
+      <div>Toolbar, SideDrawer, Backdrop</div>
+      <main>{props.children}</main>
+    </Aux>
+  );
+};
+
+export default Layout;
+```
+
+```js
+// src/App.js
+import React, { Component } from 'react';
+import Layout from './components/Layout/Layout';
+
+class App extends Component {
+  render() {
+    return (
+      <Layout>
+        <p>Test</p>
+      </Layout>
+    );
+  }
+}
+
+export default App;
+```
 
 ### 8. Starting Implementation of The Burger Builder Container
 
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+import React, { Component } from 'react';
+import Aux from '../../hoc/Aux';
+
+export class BurgerBuilder extends Component {
+  render() {
+    return (
+      <Aux>
+        <div>Burger</div>
+        <div>Build Controls</div>
+      </Aux>
+    );
+  }
+}
+
+export default BurgerBuilder;
+```
+
+```css
+/* src/components/Layout/Layout.css */
+.Content {
+  margin-top: 16px;
+}
+```
+
+```js
+// src/components/Layout/Layout.js
+import React from 'react';
+import Aux from '../../hoc/Aux';
+import classes from './Layout.css';
+
+const Layout = (props) => {
+  return (
+    <Aux>
+      <div>Toolbar, SideDrawer, Backdrop</div>
+      <main className={classes.Content}>{props.children}</main>
+    </Aux>
+  );
+};
+
+export default Layout;
+```
+
 ### 9. Adding a Dynamic Ingredient Component
+
+It can be hard to manage all the components. A good way of structuring our project, in React to create granular components and not big chunks (it is a good practice). Now if we have a lot of components, we have a lot of files and to keep these files manageable, we want to create a folder structure which is not only divided in components and containers but where inside the components and containers, **we also divide it up by feature area** so that we quickly know if we need to work on the burger side, we have to go into the burger folder.
+
+```js
+// src/components/Burger/BurgerIngredient/BurgerIngredient.js
+import React from 'react';
+import classes from './BurgerIngredient.css';
+
+const BurgerIngredient = (props) => {
+  let ingredient = null;
+
+  switch (props.type) {
+    case 'bread-bottom':
+      ingredient = <div className={classes.BreadBottom}></div>;
+      break;
+    case 'bread-top':
+      ingredient = (
+        <div className={classes.BreadTop}>
+          <div className={classes.Seeds1}></div>
+          <div className={classes.Seeds2}></div>
+        </div>
+      );
+      break;
+    case 'meat':
+      ingredient = <div className={classes.Meat}></div>;
+      break;
+    case 'cheese':
+      ingredient = <div className={classes.Cheese}></div>;
+      break;
+    case 'salad':
+      ingredient = <div className={classes.Salad}></div>;
+      break;
+    case 'bacon':
+      ingredient = <div className={classes.Bacon}></div>;
+      break;
+    default:
+      ingredient = null;
+      break;
+  }
+  return ingredient;
+};
+
+export default BurgerIngredient;
+```
+
+_Note: we have added the css file `src/components/Burger/BurgerIngredient/BurgerIngredient.css`._
 
 ### 10. Adding Prop Type Validation
 
+```js
+// src/components/Burger/BurgerIngredient/BurgerIngredient.js
+import React from 'react';
+import PropTypes from 'prop-types';
+import classes from './BurgerIngredient.css';
+
+const BurgerIngredient = (props) => {
+  //...
+};
+
+BurgerIngredient.propTypes = {
+  type: PropTypes.string.isRequired,
+};
+
+export default BurgerIngredient;
+```
+
 ### 11. Starting the Burger Component
+
+```js
+// src/components/Burger/Burger.js
+import React from 'react';
+import BurgerIngredient from './BurgerIngredient/BurgerIngredient';
+import classes from './Burger.css';
+
+const Burger = () => {
+  return (
+    <div className={classes.Burger}>
+      <BurgerIngredient type="bread-top" />
+      <BurgerIngredient type="cheese" />
+      <BurgerIngredient type="meat" />
+      <BurgerIngredient type="bread-bottom" />
+    </div>
+  );
+};
+
+export default Burger;
+```
+
+```css
+/* src/components/Burger/Burger.css */
+.Burger {
+  width: 100%;
+  margin: auto;
+  height: 250px;
+  overflow: scroll;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+@media (min-width: 500px) and (min-height: 400px) {
+  .Burger {
+    width: 350px;
+    height: 300px;
+  }
+}
+
+@media (min-width: 500px) and (min-height: 401px) {
+  .Burger {
+    width: 450px;
+    height: 400px;
+  }
+}
+
+@media (min-width: 1000px) and (min-height: 700px) {
+  .Burger {
+    width: 700px;
+    height: 600px;
+  }
+}
+```
 
 ### 12. Outputting Burger Ingredients Dynamically
 
+```js
+//...
+// state from the BurgerBuilder to the Burger component
+state = {
+  ingredients: {
+    salad: 1,
+    bacon: 1,
+    cheese: 2,
+    meat: 2,
+  },
+};
+//...
+```
+
+```js
+// src/components/Burger/Burger.js
+import React from 'react';
+import BurgerIngredient from './BurgerIngredient/BurgerIngredient';
+import classes from './Burger.css';
+
+const Burger = ({ ingredients }) => {
+  const transformedIngredients = Object.keys(ingredients).map((igKey) => {
+    return [...Array(ingredients[igKey])].map((_, idx) => {
+      return <BurgerIngredient key={igKey + idx} type={igKey} />;
+    });
+  });
+  return (
+    <div className={classes.Burger}>
+      <BurgerIngredient type="bread-top" />
+      {transformedIngredients}
+      <BurgerIngredient type="bread-bottom" />
+    </div>
+  );
+};
+
+export default Burger;
+```
+
 ### 13. Calculating the Ingredient Sum Dynamically
+
+```js
+// src/components/Burger/Burger.js
+import React from 'react';
+import BurgerIngredient from './BurgerIngredient/BurgerIngredient';
+import classes from './Burger.css';
+
+const Burger = ({ ingredients }) => {
+  let transformedIngredients = Object.keys(ingredients)
+    .map((igKey) => {
+      return [...Array(ingredients[igKey])].map((_, idx) => {
+        return <BurgerIngredient key={igKey + idx} type={igKey} />;
+      });
+    })
+    // before reduce we could have [[], [], [], []] if we pass 0 value to our ingredients
+    .reduce((acc, cur) => {
+      return acc.concat(cur);
+    }, []);
+
+  if (!transformedIngredients.length) {
+    transformedIngredients = <p>Please start adding ingredients!</p>;
+  }
+  return (
+    <div className={classes.Burger}>
+      <BurgerIngredient type="bread-top" />
+      {transformedIngredients}
+      <BurgerIngredient type="bread-bottom" />
+    </div>
+  );
+};
+
+export default Burger;
+```
 
 ### 14. Adding the Build Control Component
 
+```js
+// src/components/Burger/BuildControls/BuildControls.js
+import React from 'react';
+import classes from './BuildControls.css';
+
+const BuildControls = (props) => {
+  return <div className={classes.BuildControls}></div>;
+};
+
+export default BuildControls;
+```
+
+```js
+// src/components/Burger/BuildControls/BuildControl/BuildControl.js
+import React from 'react';
+import classes from './BuildControl.css';
+
+const BuildControl = (props) => {
+  return (
+    <div className={classes.BuildControl}>
+      <div className={classes.Label}>{props.label}</div>
+      <button className={classes.Less}>Less</button>
+      <button className={classes.More}>More</button>
+    </div>
+  );
+};
+
+export default BuildControl;
+```
+
 ### 15. Outputting Multiple Build Controls
+
+```js
+// src/components/Burger/BuildControls/BuildControls.js
+import React from 'react';
+import classes from './BuildControls.css';
+import BuildControl from './BuildControl/BuildControl';
+
+const controls = [
+  { label: 'Salad', type: 'salad' },
+  { label: 'Bacon', type: 'bacon' },
+  { label: 'Cheese', type: 'cheese' },
+  { label: 'Meat', type: 'meat' },
+];
+
+const BuildControls = (props) => {
+  return (
+    <div className={classes.BuildControls}>
+      {controls.map((control) => (
+        <BuildControl key={control.label} label={control.label} />
+      ))}
+    </div>
+  );
+};
+
+export default BuildControls;
+```
 
 ### 16. Connecting State to Build Controls
 
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+import React, { Component } from 'react';
+import Aux from '../../hoc/Aux';
+import Burger from '../../components/Burger/Burger';
+import BuildControls from '../../components/Burger/BuildControls/BuildControls';
+
+const INGREDIENT_PRICE = {
+  salad: 0.5,
+  bacon: 0.7,
+  cheese: 0.4,
+  meat: 1.3,
+};
+
+export class BurgerBuilder extends Component {
+  state = {
+    ingredients: {
+      salad: 1,
+      bacon: 1,
+      cheese: 2,
+      meat: 2,
+    },
+    totalPrice: 4, // base price $4
+  };
+
+  addIngredientHandler = (type) => {
+    const oldCount = this.state.ingredients[type];
+    const updatedCounted = oldCount + 1;
+    const updatedIngredients = {
+      ...this.state.ingredients,
+    };
+    updatedIngredients[type] = updatedCounted;
+    const priceAddition = INGREDIENT_PRICE[type];
+    const oldPrice = this.state.totalPrice;
+    const newPrice = oldPrice + priceAddition;
+    this.setState({ ingredients: updatedIngredients, totalPrice: newPrice });
+  };
+
+  removeIngredientHandler = (type) => {};
+
+  render() {
+    return (
+      <Aux>
+        <Burger ingredients={this.state.ingredients} />
+        <BuildControls ingredientAdded={this.addIngredientHandler} />
+      </Aux>
+    );
+  }
+}
+
+export default BurgerBuilder;
+```
+
+```js
+// src/components/Burger/BuildControls/BuildControls.js
+import React from 'react';
+import classes from './BuildControls.css';
+import BuildControl from './BuildControl/BuildControl';
+
+const controls = [
+  { label: 'Salad', type: 'salad' },
+  { label: 'Bacon', type: 'bacon' },
+  { label: 'Cheese', type: 'cheese' },
+  { label: 'Meat', type: 'meat' },
+];
+
+const BuildControls = (props) => {
+  return (
+    <div className={classes.BuildControls}>
+      {controls.map((control) => (
+        <BuildControl
+          key={control.label}
+          label={control.label}
+          added={() => props.ingredientAdded(control.type)}
+        />
+      ))}
+    </div>
+  );
+};
+
+export default BuildControls;
+```
+
+```js
+// src/components/Burger/BuildControls/BuildControl/BuildControl.js
+import React from 'react';
+import classes from './BuildControl.css';
+
+const BuildControl = (props) => {
+  return (
+    <div className={classes.BuildControl}>
+      <div className={classes.Label}>{props.label}</div>
+      <button className={classes.Less}>Less</button>
+      <button onClick={props.added} className={classes.More}>
+        More
+      </button>
+    </div>
+  );
+};
+
+export default BuildControl;
+```
+
 ### 17. Removing Ingredients Safely
+
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+//...
+  render() {
+    // ADD
+    const disabledInfo = {
+      ...this.state.ingredients,
+    };
+    for (const key in disabledInfo) {
+      disabledInfo[key] = disabledInfo[key] <= 0;
+    }
+    // for example `disabledInfo`: {salad: true, meat: false,...}
+    return (
+      <Aux>
+        <Burger ingredients={this.state.ingredients} />
+        <BuildControls
+          ingredientAdded={this.addIngredientHandler}
+          ingredientRemoved={this.removeIngredientHandler}
+          disabled={disabledInfo} // ADD
+        />
+      </Aux>
+    );
+  }
+//...
+```
+
+```js
+// src/components/Burger/BuildControls/BuildControls.js
+import React from 'react';
+import classes from './BuildControls.css';
+import BuildControl from './BuildControl/BuildControl';
+
+//...
+
+const BuildControls = (props) => {
+  return (
+    <div className={classes.BuildControls}>
+      {controls.map((control) => (
+        <BuildControl
+          key={control.label}
+          label={control.label}
+          added={() => props.ingredientAdded(control.type)}
+          removed={() => props.ingredientRemoved(control.type)}
+          disabled={props.disabled[control.type]} // ADD
+        />
+      ))}
+    </div>
+  );
+};
+
+export default BuildControls;
+```
+
+```js
+// src/components/Burger/BuildControls/BuildControl/BuildControl.js
+import React from 'react';
+import classes from './BuildControl.css';
+
+const BuildControl = (props) => {
+  return (
+    <div className={classes.BuildControl}>
+      <div className={classes.Label}>{props.label}</div>
+      <button
+        onClick={props.removed}
+        className={classes.Less}
+        disabled={props.disabled} // ADD
+      >
+        Less
+      </button>
+      <button onClick={props.added} className={classes.More}>
+        More
+      </button>
+    </div>
+  );
+};
+
+export default BuildControl;
+```
 
 ### 18. Displaying and Updating the Burger Price
 
+```js
+// src/components/Burger/BuildControls/BuildControls.js
+//...
+const BuildControls = (props) => {
+  return (
+    <div className={classes.BuildControls}>
+      <p>
+        Current Price: <strong>{props.price.toFixed(2)}</strong>
+      </p>
+      {...}
+    </div>
+  );
+};
+//...
+```
+
 ### 19. Adding the Order Button
+
+We keep ALL the state in the `BurgerBuilder`! Let's add a `purchaseable` state which will disable (or not) the "ORDER NOW" button.
+
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+import React, { Component } from 'react';
+import Aux from '../../hoc/Aux';
+import Burger from '../../components/Burger/Burger';
+import BuildControls from '../../components/Burger/BuildControls/BuildControls';
+
+//...
+
+export class BurgerBuilder extends Component {
+  state = {
+    ingredients: {
+      salad: 0,
+      bacon: 0,
+      cheese: 0,
+      meat: 0,
+    },
+    totalPrice: 4,
+    purchaseable: false, // ADD
+  };
+
+  updatePurchaseState(ingredients) {
+    // ADD, information from `addIngredientHandler` and `removeIngredientHandler`
+    const sum = Object.keys(ingredients)
+      .map((igKey) => ingredients[igKey])
+      .reduce((acc, cur) => {
+        return acc + cur;
+      }, 0);
+
+    this.setState({ purchaseable: sum > 0 });
+  }
+
+  addIngredientHandler = (type) => {
+    //...
+    const updatedIngredients = {
+      ...this.state.ingredients,
+    };
+    updatedIngredients[type] = updatedCounted;
+    //...
+    this.setState({ ingredients: updatedIngredients, totalPrice: newPrice });
+    this.updatePurchaseState(updatedIngredients); // ADD, we needed to pass updatedIngredients otherwise or state wasn't upadted and we had to add 2 ingredients to see the button enable
+  };
+
+  removeIngredientHandler = (type) => {
+    //...
+    const updatedIngredients = {
+      ...this.state.ingredients,
+    };
+    updatedIngredients[type] = updatedCounted;
+    //...
+    this.setState({ ingredients: updatedIngredients, totalPrice: newPrice });
+    this.updatePurchaseState(updatedIngredients); // ADD
+  };
+
+  render() {
+    //...
+    return (
+      <Aux>
+        <Burger ingredients={this.state.ingredients} />
+        <BuildControls
+          price={this.state.totalPrice}
+          purchaseable={this.state.purchaseable}
+          ingredientAdded={this.addIngredientHandler}
+          ingredientRemoved={this.removeIngredientHandler}
+          disabled={disabledInfo} // ADD
+        />
+      </Aux>
+    );
+  }
+}
+
+export default BurgerBuilder;
+```
+
+We need to `disabled={!props.purchaseable}` on the "ORDER NOW" button.
+
+```js
+// src/components/Burger/BuildControls/BuildControls.js
+import React from 'react';
+import classes from './BuildControls.css';
+import BuildControl from './BuildControl/BuildControl';
+
+//...
+
+const BuildControls = (props) => {
+  return (
+    <div className={classes.BuildControls}>
+      {...}
+      <button className={classes.OrderButton} disabled={!props.purchaseable}>
+        ORDER NOW
+      </button>
+    </div>
+  );
+};
+
+export default BuildControls;
+```
 
 ### 20. Creating the Order Summary Modal
 
+We want to make sure that once we click the button, we open a modal with the order summary. We need a modal, we need a backdrop and we need to show some order summary. The idea behind the modal is to have a wrapping element which provides the styling which then simply wraps itself about any content we want to show in that modal.
+
+```js
+// src/components/UI/Modal/Modal.js
+import React from 'react';
+import classes from './Modal.css';
+
+const Modal = (props) => {
+  return <div className={classes.Modal}>{props.children}</div>;
+};
+
+export default Modal;
+```
+
+```js
+// src/components/Burger/OrderSummary/OrderSummary.js
+import React from 'react';
+import Aux from '../../../hoc/Aux';
+
+const OrderSummary = ({ ingredients }) => {
+  const ingredientSummary = Object.keys(ingredients).map((igKey, idx) => {
+    return (
+      <li key={igKey + idx}>
+        <span style={{ textTransform: 'capitalize' }}>{igKey}</span>:{' '}
+        {ingredients[igKey]}
+      </li>
+    );
+  });
+  return (
+    <Aux>
+      <h3>Your Order</h3>
+      <p>Delicious burger with the following ingredients: </p>
+      <ul>{ingredientSummary}</ul>
+      <p>Continue to Checkout</p>
+    </Aux>
+  );
+};
+
+export default OrderSummary;
+```
+
+Now we can pass our `OrderSummary` to the Modal in the `BurgerBuilder`:
+
+```js
+//...
+<Modal>
+  <OrderSummary ingredients={this.state.ingredients} />
+</Modal>
+//...
+```
+
 ### 21. Showing & Hiding the Modal (with Animation)
+
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+//...
+export class BurgerBuilder extends Component {
+  state = {
+    //...
+    purchaseable: false,
+    purchasing: false, // ADD
+  };
+
+  //...
+
+  purchaseHandler = () => {
+    this.setState({ purchasing: !this.state.purchasing }); // ADD
+  };
+
+  render() {
+    //...
+    return (
+      <Aux>
+        <Modal show={this.state.purchasing}>
+          <OrderSummary ingredients={this.state.ingredients} />
+        </Modal>
+        <Burger ingredients={this.state.ingredients} />
+        <BuildControls
+          price={this.state.totalPrice}
+          purchaseable={this.state.purchaseable}
+          ordered={this.purchaseHandler} // ADD
+          ingredientAdded={this.addIngredientHandler}
+          ingredientRemoved={this.removeIngredientHandler}
+          disabled={disabledInfo}
+        />
+      </Aux>
+    );
+  }
+}
+
+export default BurgerBuilder;
+```
+
+Let's make some changes with our modal to create a CSS animation.
+
+```js
+// src/components/UI/Modal/Modal.js
+import React from 'react';
+import classes from './Modal.css';
+
+const Modal = (props) => {
+  return (
+    <div
+      style={{
+        transform: props.show ? 'translateY(0)' : 'translateY(-100vh)',
+        opacity: props.show ? 1 : 0,
+      }}
+      className={classes.Modal}
+    >
+      {props.children}
+    </div>
+  );
+};
+
+export default Modal;
+```
 
 ### 22. Implementing the Backdrop Component
 
+```js
+// src/components/UI/Backdrop/Backdrop.js
+import React from 'react';
+import classes from './Backdrop.css';
+
+const Backdrop = (props) => {
+  return props.show ? (
+    <div className={classes.Backdrop} onClick={props.clicked}></div>
+  ) : null;
+};
+
+export default Backdrop;
+```
+
+```js
+// src/components/UI/Modal/Modal.js
+import React from 'react';
+import classes from './Modal.css';
+import Aux from '../../../hoc/Aux';
+import Backdrop from '../Backdrop/Backdrop';
+
+const Modal = (props) => {
+  return (
+    <Aux>
+      <Backdrop show={props.show} clicked={props.modalClosed} />
+      <div
+        style={{
+          transform: props.show ? 'translateY(0)' : 'translateY(-100vh)',
+          opacity: props.show ? 1 : 0,
+        }}
+        className={classes.Modal}
+      >
+        {props.children}
+      </div>
+    </Aux>
+  );
+};
+
+export default Modal;
+```
+
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+//...
+  return (
+    <Aux>
+      <Modal
+        show={this.state.purchasing}
+        modalClosed={this.purchaseCancelHandler}
+      >
+        <OrderSummary ingredients={this.state.ingredients} />
+      </Modal>
+      <Burger ingredients={this.state.ingredients} />
+      {...}
+    </Aux>
+  );
+//...
+```
+
 ### 23. Adding a Custom Button Component
+
+```js
+// src/components/UI/Button/Button.js
+import React from 'react';
+import classes from './Button.css';
+
+const Button = (props) => {
+  return (
+    <button
+      className={[classes.Button, classes[props.btnType]].join(' ')}
+      onClick={props.clicked}
+    >
+      {props.children}
+    </button>
+  );
+};
+
+export default Button;
+```
+
+```css
+/* src/components/UI/Button/Button.css */
+.Button {
+  background-color: transparent;
+  border: none;
+  color: white;
+  outline: none;
+  cursor: pointer;
+  font: inherit;
+  padding: 10px;
+  margin: 10px;
+  font-weight: bold;
+}
+
+.Button:first-of-type {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.Success {
+  color: #5c9210;
+}
+
+.Danger {
+  color: #944317;
+}
+```
 
 ### 24. Implementing the Button Component
 
+```js
+// src/components/Burger/OrderSummary/OrderSummary.js
+import React from 'react';
+import Aux from '../../../hoc/Aux';
+import Button from '../../UI/Button/Button';
+
+const OrderSummary = (props) => {
+  const { ingredients, purchaseCanceled, purchaseContinued } = props; // ADD
+  const ingredientSummary = Object.keys(ingredients).map((igKey, idx) => {
+    return (
+      <li key={igKey + idx}>
+        <span style={{ textTransform: 'capitalize' }}>{igKey}</span>:{' '}
+        {ingredients[igKey]}
+      </li>
+    );
+  });
+
+  return (
+    <Aux>
+      <h3>Your Order</h3>
+      <p>Delicious burger with the following ingredients: </p>
+      <ul>{ingredientSummary}</ul>
+      <p>Continue to Checkout</p>
+      <Button btnType="Danger" clicked={purchaseCanceled}>
+        CANCEL
+      </Button>
+      <Button btnType="Success" clicked={purchaseContinued}>
+        CONTINUE
+      </Button>
+    </Aux>
+  );
+};
+
+export default OrderSummary;
+```
+
 ### 25. Adding the Price to the Order Summary
+
+We just added the price `prop` to the OrderSummary. Easy!
 
 ### 26. Adding a Toolbar
 
