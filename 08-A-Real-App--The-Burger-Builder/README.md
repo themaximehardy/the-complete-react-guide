@@ -1027,29 +1027,520 @@ We just added the price `prop` to the OrderSummary. Easy!
 
 ### 26. Adding a Toolbar
 
+```js
+// src/components/Navigation/Toolbar/Toolbar.js
+import React from 'react';
+import classes from './Toolbar.css';
+
+const Toolbar = (props) => {
+  return (
+    <header className={classes.Toolbar}>
+      <div>MENU</div>
+      <div>LOGO</div>
+      <nav>
+        <ul>
+          <li>XXX</li>
+          <li>YYY</li>
+        </ul>
+      </nav>
+    </header>
+  );
+};
+
+export default Toolbar;
+```
+
+And let's add the `Toolbar` to the `Layout`.
+
+```js
+// src/components/Layout/Layout.js
+import React from 'react';
+import Aux from '../../hoc/Aux';
+import classes from './Layout.css';
+import Toolbar from '../Navigation/Toolbar/Toolbar';
+
+const Layout = (props) => {
+  return (
+    <Aux>
+      <Toolbar />
+      <main className={classes.Content}>{props.children}</main>
+    </Aux>
+  );
+};
+
+export default Layout;
+```
+
 ### 27. Using a Logo in our Application
+
+```js
+// src/components/Logo/Logo.js
+import React from 'react';
+import burgerLogo from '../../assets/images/burger-logo.png'; // image from /assets folder (Webpack will understand it)
+import classes from './Logo.css';
+
+const Logo = () => {
+  return (
+    <div className={classes.Logo}>
+      <img src={burgerLogo} alt="MyBurger" />
+    </div>
+  );
+};
+
+export default Logo;
+```
 
 ### 28. Adding Reusable Navigation Items
 
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.js
+import React from 'react';
+import classes from './NavigationItems.css';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+const NavigationItems = () => {
+  return (
+    <ul className={classes.NavigationItems}>
+      <NavigationItem link="/" active>
+        Burger&nbsp;Builder
+      </NavigationItem>
+      <NavigationItem link="/checkout">Checkout</NavigationItem>
+    </ul>
+  );
+};
+
+export default NavigationItems;
+```
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItem/NavigationItem.js
+import React from 'react';
+import classes from './NavigationItem.css';
+
+const NavigationItem = (props) => {
+  return (
+    <li className={classes.NavigationItem}>
+      <a href={props.link} className={props.active ? classes.active : null}>
+        {props.children}
+      </a>
+    </li>
+  );
+};
+
+export default NavigationItem;
+```
+
 ### 29. Creating a Responsive Sidedrawer
+
+```js
+// src/components/Navigation/SideDrawer/SideDrawer.js
+import React from 'react';
+import Logo from '../../Logo/Logo';
+import NavigationItems from '../NavigationItems/NavigationItems';
+import classes from './SideDrawer.css';
+
+const SideDrawer = () => {
+  //...
+  return (
+    <div className={classes.SideDrawer}>
+      <Logo />
+      <nav>
+        <NavigationItems />
+      </nav>
+    </div>
+  );
+};
+
+export default SideDrawer;
+```
+
+We manage the **animation** as below:
+
+```css
+/* src/components/Navigation/SideDrawer/SideDrawer.css */
+.SideDrawer {
+  position: fixed;
+  width: 280px;
+  max-width: 70%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  z-index: 200;
+  background-color: white;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease-out;
+}
+
+@media (min-width: 500px) {
+  .SideDrawer {
+    display: none;
+  }
+}
+
+.Open {
+  transform: translateX(0);
+}
+
+.Close {
+  transform: translateX(-100%);
+}
+```
+
+We add the new `SideDrawer` in our `Layout` component.
+
+```js
+// src/components/Layout/Layout.js
+import React from 'react';
+import Aux from '../../hoc/Aux';
+import classes from './Layout.css';
+import Toolbar from '../Navigation/Toolbar/Toolbar';
+import SideDrawer from '../Navigation/SideDrawer/SideDrawer';
+
+const Layout = (props) => {
+  return (
+    <Aux>
+      <Toolbar />
+      <SideDrawer />
+      <main className={classes.Content}>{props.children}</main>
+    </Aux>
+  );
+};
+
+export default Layout;
+```
 
 ### 30. Working on Responsive Adjustments
 
+We could add a prop to Logo `height="11%"`.
+
+```js
+// src/components/Navigation/SideDrawer/SideDrawer.js
+//...
+const SideDrawer = () => {
+  //...
+  return (
+    <div className={classes.SideDrawer}>
+      <Logo height="11%" />
+      <nav>
+        <NavigationItems />
+      </nav>
+    </div>
+  );
+};
+
+export default SideDrawer;
+```
+
+```js
+// src/components/Logo/Logo.js
+//...
+const Logo = (props) => {
+  return (
+    <div className={classes.Logo} style={{ height: props.height }}>
+      <img src={burgerLogo} alt="MyBurger" />
+    </div>
+  );
+};
+
+export default Logo;
+```
+
+Or another approach, we could wrap `Logo` into a `div` and add a `className={classes.Logo}`. We can define in our `SideDrawer.css`:
+
+```css
+.Logo {
+  height: 11%;
+}
+```
+
+```js
+// src/components/Navigation/SideDrawer/SideDrawer.js
+//...
+const SideDrawer = () => {
+  //...
+  return (
+    <div className={classes.SideDrawer}>
+      <div className={classes.Logo}>
+        <Logo />
+      </div>
+      <nav>
+        <NavigationItems />
+      </nav>
+    </div>
+  );
+};
+
+export default SideDrawer;
+```
+
 ### 31. More about Responsive Adjustments
+
+```css
+/* src/components/Navigation/NavigationItems/NavigationItems.css */
+.NavigationItems {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  height: 100%;
+}
+
+@media (min-width: 500px) {
+  .NavigationItems {
+    flex-flow: row;
+  }
+}
+```
+
+```css
+/* src/components/Navigation/Toolbar/Toolbar.css */
+@media (max-width: 499px) {
+  .DesktopOnly {
+    display: none;
+  }
+}
+```
 
 ### 32. Reusing the Backdrop
 
+```js
+// src/components/Layout/Layout.js
+//...
+export class Layout extends Component {
+  state = {
+    showSideDrawer: true,
+  };
+
+  sideDrawerClosedHandler = () => {
+    this.setState({ showSideDrawer: false });
+  };
+
+  render() {
+    return (
+      <Aux>
+        <Toolbar />
+        <SideDrawer
+          open={this.state.showSideDrawer}
+          closed={this.sideDrawerClosedHandler}
+        />
+        <main className={classes.Content}>{this.props.children}</main>
+      </Aux>
+    );
+  }
+}
+
+export default Layout;
+```
+
+```js
+// src/components/Navigation/SideDrawer/SideDrawer.js
+import React from 'react';
+import Logo from '../../Logo/Logo';
+import NavigationItems from '../NavigationItems/NavigationItems';
+import Backdrop from '../../UI/Backdrop/Backdrop';
+import Aux from '../../../hoc/Aux';
+import classes from './SideDrawer.css';
+
+const SideDrawer = (props) => {
+  let attachedClasses = [classes.SideDrawer, classes.Close];
+  if (props.open) {
+    attachedClasses = [classes.SideDrawer, classes.Open];
+  }
+  return (
+    <Aux>
+      <Backdrop show={props.open} clicked={props.closed} />
+      <div className={attachedClasses.join(' ')}>
+        <div className={classes.Logo}>
+          <Logo />
+        </div>
+        <nav>
+          <NavigationItems />
+        </nav>
+      </div>
+    </Aux>
+  );
+};
+
+export default SideDrawer;
+```
+
 ### 33. Adding a Sidedrawer Toggle Button
+
+```js
+// src/components/Layout/Layout.js
+import React, { Component } from 'react';
+import Aux from '../../hoc/Aux';
+import classes from './Layout.css';
+import Toolbar from '../Navigation/Toolbar/Toolbar';
+import SideDrawer from '../Navigation/SideDrawer/SideDrawer';
+
+export class Layout extends Component {
+  state = {
+    showSideDrawer: true,
+  };
+
+  sideDrawerClosedHandler = () => {
+    this.setState({ showSideDrawer: false });
+  };
+
+  sideDrawerToggleHandler = () => {
+    this.setState((prevState) => {
+      return { showSideDrawer: !prevState.showSideDrawer };
+    });
+  };
+
+  render() {
+    return (
+      <Aux>
+        <Toolbar drawerToggleClicked={this.sideDrawerToggleHandler} />
+        <SideDrawer
+          open={this.state.showSideDrawer}
+          closed={this.sideDrawerClosedHandler}
+        />
+        <main className={classes.Content}>{this.props.children}</main>
+      </Aux>
+    );
+  }
+}
+
+export default Layout;
+```
 
 ### 34. Adding a Hamburger Icon
 
+```js
+// src/components/Navigation/SideDrawer/DrawerToggle/DrawerToggle.js
+import React from 'react';
+import classes from './DrawerToggle.css';
+
+const DrawerToggle = (props) => {
+  return (
+    <div className={classes.DrawerToggle} onClick={props.clicked}>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  );
+};
+
+export default DrawerToggle;
+```
+
+```css
+/* src/components/Navigation/SideDrawer/DrawerToggle/DrawerToggle.css */
+.DrawerToggle {
+  width: 40px;
+  height: 100%;
+  display: flex;
+  flex-flow: column;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.DrawerToggle div {
+  width: 90%;
+  height: 3px;
+  background-color: white;
+}
+
+@media (min-width: 500px) {
+  .DrawerToggle {
+    display: none;
+  }
+}
+```
+
 ### 35. Improving the App - Introduction
+
+Let's dive into **two important things**, **prop types** and **pure components** (link with `shouldComponentUpdate`). Let's also have a look at all these **lifecycle methods** we learned about. Do we use them in there? Why don't we use them at any point right now? Where would we use them?
 
 ### 36. Prop Type Validation
 
+**We're not doing any validation** in any other component (except `BurgerIngredient`) and the reason is, we're not working on a project which is going to get used by other people, we're not working on a third-party library, and we're not even working in a developer team... a lot of the reasons why properties might be used incorrectly aren't relevant here.
+
 ### 37. Improving Performance
 
+Because in the `BurgerBuilder` we have the `Modal` and the `OrderSummary` where we passed prop which can re-render them (without seeing them). We need to be sure to prevent it.
+
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+//...
+  render() {
+   //...
+    return (
+      <Aux>
+        <Modal
+          show={this.state.purchasing}
+          modalClosed={this.purchaseCancelHandler}
+        >
+          <OrderSummary
+            price={this.state.totalPrice}
+            ingredients={this.state.ingredients}
+            purchaseCanceled={this.purchaseCancelHandler}
+            purchaseContinued={this.purchaseContinueHandler}
+          />
+        </Modal>
+        <Burger ingredients={this.state.ingredients} />
+        <BuildControls
+          price={this.state.totalPrice}
+          purchaseable={this.state.purchaseable}
+          ordered={this.purchaseHandler}
+          ingredientAdded={this.addIngredientHandler}
+          ingredientRemoved={this.removeIngredientHandler}
+          disabled={disabledInfo}
+        />
+      </Aux>
+    );
+  }
+//...
+```
+
+Let's change the `Modal` component and add a `shouldComponentUpdate` method to prevent the update if `show` don't change.
+
+```js
+// src/components/UI/Modal/Modal.js
+import React, { Component } from 'react';
+import classes from './Modal.css';
+import Aux from '../../../hoc/Aux';
+import Backdrop from '../Backdrop/Backdrop';
+
+class Modal extends Component {
+  shouldComponentUpdate(nextProps, nextState) {
+    return nextProps.show !== this.props.show;
+  }
+
+  render() {
+    return (
+      <Aux>
+        <Backdrop show={this.props.show} clicked={this.props.modalClosed} />
+        <div
+          style={{
+            transform: this.props.show ? 'translateY(0)' : 'translateY(-100vh)',
+            opacity: this.props.show ? 1 : 0,
+          }}
+          className={classes.Modal}
+        >
+          {this.props.children}
+        </div>
+      </Aux>
+    );
+  }
+}
+
+export default Modal;
+```
+
+We definitely improved our application because we make sure that we don't unnecessarily update `OrderSummary`. `OrderSummary` is included in the `BurgerBuilder` but it is not updated because the wrapping element `Modal` has a shouldComponentUpdate method where we control this.
+
 ### 38. Using Component Lifecycle Methods
+
+We're going to use them, especially when we'll use HTTP requests.
 
 ### 39. Changing the Folder Structure
 
