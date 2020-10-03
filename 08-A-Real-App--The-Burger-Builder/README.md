@@ -1541,7 +1541,3 @@ We definitely improved our application because we make sure that we don't unnece
 ### 38. Using Component Lifecycle Methods
 
 We're going to use them, especially when we'll use HTTP requests.
-
-### 39. Changing the Folder Structure
-
-### 40. Wrap Up
