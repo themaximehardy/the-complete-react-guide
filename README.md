@@ -17,7 +17,7 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 11  | [ Multi-Page-Feeling in a Single-Page-App: Routing ](11-Multi-Page-Feeling-in-a-SPA-Routing/README.md)              |
 | 12  | [ Adding Routing to our Burger Project ](12-Adding-Routing-to-our-Burger-Project/README.md)                         |
 | 13  | [ Forms and Form Validation ](13-Forms-and-Form-Validation/README.md)                                               |
-| 14  | [ Redux ]()                                                                                                         |
+| 14  | [ Redux ](14-Redux/README.md)                                                                                       |
 | 15  | [ Adding Redux to our Project ]()                                                                                   |
 | 16  | [ Redux Advanced ]()                                                                                                |
 | 17  | [ Redux Advanced: Burger Project ]()                                                                                |
