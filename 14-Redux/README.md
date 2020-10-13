@@ -82,6 +82,103 @@ This is the redux flow, this is how redux works.
 
 ### 5. Setting Up Reducer and Store
 
+Let's start with the basic project and install `redux` (the Redux library works standalone and we'll actually use it standalone for now but we'll soon add it to our React application to see how it works together with it).
+
+```sh
+yarn add redux
+```
+
+Then let's create a new file in the `src` folder – `redux-basics.js`. Now this file will not be holding any React code, we won't include it into our React project. We'll execute it with Nodejs instead, just to show the different concepts of Redux in one file and to show that it's independent of React.
+
+```js
+// src/redux-basics.js
+const redux = require('redux');
+const createStore = redux.createStore; // createStore as the name suggests allows us to create a new redux store
+
+// STORE
+const store = createStore();
+/* 
+`createStore` like this won't do much though, a store needs to be initialized with a reducer because the reducer 
+and remember we only have one reducer, even if we combine multiple ones, they will be merged into one.
+*/
+
+// REDUCER
+
+// DISPATCHING ACTION
+
+// SUBSCRIPTION
+```
+
+The reducer is strongly connected to the store, it's the only thing that may update the state in the end. That's why we need to pass the reducer to this creation function because it's so closely connected to the state.
+
+```js
+// src/redux-basics.js
+const redux = require('redux');
+const createStore = redux.createStore;
+
+// REDUCER
+const rootReducer = (state, action) => {
+  return state;
+};
+
+// STORE
+const store = createStore();
+
+// DISPATCHING ACTION
+
+// SUBSCRIPTION
+```
+
+`rootReducer` function receives **two arguments**, the first one is the current `state` (oldState, which it then may update) and the `action`. The function has to **return one thing** and that is the **updated state**.
+
+The simplest reducer you can write simply returns the old state (as above), so this is a valid reducer (as above) though of course it does nothing, it just returns the state you already had.
+
+```js
+// src/redux-basics.js
+const redux = require('redux');
+const createStore = redux.createStore;
+
+// REDUCER
+const rootReducer = (state, action) => {
+  return state;
+};
+
+// STORE
+const store = createStore(rootReducer);
+console.log(store.getState()); // undefined
+
+// DISPATCHING ACTION
+
+// SUBSCRIPTION
+```
+
+But we can already use that reducer and pass it as an argument to `createStore` `rootReducer`, with that, our reducer our store is created with that reducer in mind and now we have a created store, however this store will hold an `undefined` state.
+
+```js
+// src/redux-basics.js
+const redux = require('redux');
+const createStore = redux.createStore;
+
+const initialState = {
+  counter: 0,
+};
+
+// REDUCER
+const rootReducer = (state = initialState, action) => {
+  return state;
+};
+
+// STORE
+const store = createStore(rootReducer);
+console.log(store.getState()); // { counter: 0 }
+
+// DISPATCHING ACTION
+
+// SUBSCRIPTION
+```
+
+So this is how we create a store with a reducer and how we initialize the state, how do we now subscribe to the state and dispatch actions?
+
 ### 6. Dispatching Actions
 
 ### 7. Adding Subscriptions
