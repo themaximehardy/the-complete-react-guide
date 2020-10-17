@@ -18,7 +18,7 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 12  | [ Adding Routing to our Burger Project ](12-Adding-Routing-to-our-Burger-Project/README.md)                         |
 | 13  | [ Forms and Form Validation ](13-Forms-and-Form-Validation/README.md)                                               |
 | 14  | [ Redux ](14-Redux/README.md)                                                                                       |
-| 15  | [ Adding Redux to our Project ]()                                                                                   |
+| 15  | [ Adding Redux to our Project ](15-Adding-Redux-to-our-Project/README.md)                                           |
 | 16  | [ Redux Advanced ]()                                                                                                |
 | 17  | [ Redux Advanced: Burger Project ]()                                                                                |
 | 18  | [ Adding Authentication to our Burger Project ]()                                                                   |
