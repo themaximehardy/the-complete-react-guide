@@ -1,17 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter } from 'react-router-dom';
-import { Provider } from 'react-redux'; // 1 – import Provider from react-redux
-import { createStore } from 'redux'; // 2 – import createStore from redux
+import { Provider } from 'react-redux';
+import { createStore, applyMiddleware, compose } from 'redux'; // 2 – then import `applyMiddleware` and `compose` from `redux`
+import thunk from 'redux-thunk'; // 1 – import `thunk` from `redux-thunk`
 
 import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
-import reducer from './store/reducer'; // 3 – import our reducer
+import burgerBuilderReducer from './store/reducers/burgerBuilder';
 
-const store = createStore(reducer); // 4 – create our store and pass our reducer
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose; // 3 – create `composeEnhancers` variable
 
-// 5 – wrap BrowserRouter with Provider (and pass our store as a prop)
+// 4 – modify `createStore` and add `composeEnhancers(applyMiddleware(thunk))`
+const store = createStore(
+  burgerBuilderReducer,
+  composeEnhancers(applyMiddleware(thunk)),
+);
+
 const app = (
   <Provider store={store}>
     <BrowserRouter>

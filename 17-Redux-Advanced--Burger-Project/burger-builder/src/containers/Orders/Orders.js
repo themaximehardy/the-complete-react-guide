@@ -13,6 +13,7 @@ export class Orders extends Component {
     axios
       .get('/orders.json')
       .then(({ data }) => {
+        console.log('*** data: ', data);
         this.setState({ loading: false });
         const fetchedOrders = [];
         for (const key in data) {
