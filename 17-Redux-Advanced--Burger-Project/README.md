@@ -330,7 +330,7 @@ export const purchaseBurgerStart = (orderData) => {
     axios
       .post('/orders.json', orderData)
       .then((response) => {
-        dispatch(purchaseBurgerSuccess(response.data, orderData));
+        dispatch(purchaseBurgerSuccess(response.data.name, orderData));
       })
       .catch((error) => {
         console.log('error: ', error);
@@ -514,7 +514,7 @@ export const purchaseBurger = (orderData) => {
     axios
       .post('/orders.json', orderData)
       .then((response) => {
-        dispatch(purchaseBurgerSuccess(response.data, orderData));
+        dispatch(purchaseBurgerSuccess(response.data.name, orderData));
       })
       .catch((error) => {
         console.log('error: ', error);
@@ -588,14 +588,553 @@ export default connect(mapStateToProps)(Checkout);
 
 ### 14. Combining Reducers
 
+```js
+// src/index.js
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { createStore, applyMiddleware, compose, combineReducers } from 'redux'; // 1 – import `combineReducers` from `redux`
+import thunk from 'redux-thunk';
+
+import './index.css';
+import App from './App';
+import registerServiceWorker from './registerServiceWorker';
+import burgerBuilderReducer from './store/reducers/burgerBuilder';
+import orderReducer from './store/reducers/order'; // 2 – import our orderReducer
+
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
+// 3 – let's create a rootReducer where we combine our reducers
+const rootReducer = combineReducers({
+  burgerBuilder: burgerBuilderReducer,
+  order: orderReducer,
+});
+
+// 4 – and now pass the rootreducer as first arg in the createStore
+const store = createStore(
+  rootReducer,
+  composeEnhancers(applyMiddleware(thunk)),
+);
+
+const app = (
+  <Provider store={store}>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </Provider>
+);
+
+ReactDOM.render(app, document.getElementById('root'));
+registerServiceWorker();
+```
+
+And now we need to amend our `mapStateToProps` (here is an example below). We need to access the right slice of state, because now we're combining our reducers.
+
+```js
+// src/containers/Checkout/ContactData/ContactData.js
+//...
+const mapStateToProps = (state) => {
+  return {
+    ings: state.burgerBuilder.ingredients, // add `burgerBuilder`
+    totalPrice: state.burgerBuilder.totalPrice, // add `burgerBuilder`
+    loading: state.order.loading, // add `order`
+  };
+};
+//...
+```
+
 ### 15. Handling Purchases & Updating the UI
+
+We never get **redirected** once we placed an order. There are various ways of implementing redirection, one thing is we could **pass a reference to that router history prop onto our order action creator** and when we dispatch burger success or fail, or at least for the success case, we could then use that if we receive it as an argument in this function to call the push method on it... but this is not great (even if we can definitely do that).
+
+The approach we'll use is a Redux only approach, we'll add a new action type to the action types file `PURCHASE_INIT`.
+
+```js
+// src/store/actions/actionTypes.js
+//...
+export const PURCHASE_INIT = 'PURCHASE_INIT'; // 1 – add a new action type `PURCHASE_INIT`
+//...
+```
+
+```js
+// src/store/actions/order.js
+//...
+// 2 – create a new action creator `purchaseInit` where we only return the action type `PURCHASE_INIT`
+export const purchaseInit = () => {
+  return {
+    type: actionTypes.PURCHASE_INIT,
+  };
+};
+//...
+```
+
+```js
+// src/store/actions/index.js
+export {
+  addIngredient,
+  removeIngredient,
+  initIngredient,
+} from './burgerBuilder';
+export { purchaseBurger, purchaseInit } from './order'; // 3 – export purchaseInit to get access to it
+```
+
+```js
+// src/containers/Checkout/Checkout.js
+import React, { Component } from 'react';
+//...
+import * as actions from '../../store/actions/index'; // 1 – import actions
+
+export class Checkout extends Component {
+  // 4 – add `componentWillMount` and call `this.props.onInitPurchase()`
+  componentWillMount() {
+    this.props.onInitPurchase();
+  }
+
+  //...
+
+  render() {
+    const { ings } = this.props;
+    let summary = <Redirect to="/" />;
+    if (ings) {
+      // 6 – check if purchased
+      const purchasedRedirect = this.props.purchased ? (
+        <Redirect to="/" />
+      ) : null;
+      summary = (
+        <React.Fragment>
+          {purchasedRedirect}
+          {...}
+        </React.Fragment>
+      );
+    }
+    return summary;
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    ings: state.burgerBuilder.ingredients,
+    purchased: state.order.purchased, // 5 – get purchased value from the store
+  };
+};
+
+// 2 – create `mapDispatchToProps` and return `onInitPurchase` which dispatch `onInitPurchase`
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onInitPurchase: () => {
+      dispatch(actions.purchaseInit());
+    },
+  };
+};
+
+// 3 – don't forget to add `mapDispatchToProps` to connect
+export default connect(mapStateToProps, mapDispatchToProps)(Checkout);
+```
 
 ### 16. Resetting the Price after Purchases
 
+```js
+// src/containers/Checkout/Checkout.js
+import React, { Component } from 'react';
+import { Route, Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
+//...
+
+export class Checkout extends Component {
+  //...
+  render() {
+    const { ings } = this.props;
+    let summary = <Redirect to="/" />;
+    if (ings) {
+      // using purchased to know if we bought it/submit the form and redirect
+      const purchasedRedirect = this.props.purchased ? (
+        <Redirect to="/" />
+      ) : null;
+      summary = (
+        <React.Fragment>
+          {purchasedRedirect}
+          <CheckoutSummary
+            ingredients={ings}
+            checkoutCancelled={this.checkoutCancelledHandler}
+            checkoutContinued={this.checkoutContinuedHandler}
+          />
+          <Route
+            path={`${this.props.match.path}/contact-data`}
+            component={ContactData}
+          />
+        </React.Fragment>
+      );
+    }
+    return summary;
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    ings: state.burgerBuilder.ingredients,
+    purchased: state.order.purchased, // add (+ see reducer)
+  };
+};
+
+export default connect(mapStateToProps)(Checkout);
+```
+
 ### 17. Fetching Orders (via Redux)
 
-### 18. Checking our Implemented Functionalities
+1. Create the action types
 
-### 19. Refactoring Reducers
+```js
+// src/store/actions/actionTypes.js
+//...
+export const FETCH_ORDERS_START = 'FETCH_ORDERS_START';
+export const FETCH_ORDERS_SUCCESS = 'FETCH_ORDERS_SUCCESS';
+export const FETCH_ORDERS_FAIL = 'FETCH_ORDERS_FAIL';
+//...
+```
 
-### 20. Refactoring Reducers Continued
+2. Create the action creators
+
+```js
+// src/store/actions/order.js
+//...
+export const fetchOrdersSuccess = (orders) => {
+  return {
+    type: actionTypes.FETCH_ORDERS_SUCCESS,
+    payload: {
+      orders,
+    },
+  };
+};
+
+export const fetchOrdersFail = (error) => {
+  return {
+    type: actionTypes.FETCH_ORDERS_FAIL,
+    payload: {
+      error,
+    },
+  };
+};
+
+export const fetchOrdersStart = () => {
+  return {
+    type: actionTypes.FETCH_ORDERS_START,
+  };
+};
+
+export const fetchOrders = () => {
+  return (dispatch) => {
+    dispatch(fetchOrdersStart());
+    axios
+      .get('/orders.json')
+      .then(({ data }) => {
+        const fetchedOrders = [];
+        for (const key in data) {
+          fetchedOrders.push({ ...data[key], id: key });
+        }
+        dispatch(fetchOrdersSuccess(fetchedOrders));
+      })
+      .catch((error) => {
+        dispatch(fetchOrdersFail(error));
+      });
+  };
+};
+//...
+```
+
+3. Handle these new actions in the reducer too and create new cases
+
+```js
+import * as actionTypes from '../actions/actionTypes';
+
+const initialState = {
+  orders: [],
+  loading: false,
+  purchased: false,
+};
+
+const reducer = (state = initialState, action) => {
+  switch (action.type) {
+    case actionTypes.PURCHASE_INIT:
+      return {
+        ...state,
+        purchased: false,
+      };
+    case actionTypes.FETCH_ORDERS_START: // add
+    case actionTypes.PURCHASE_BURGER_START:
+      return {
+        ...state,
+        loading: true,
+      };
+    case actionTypes.PURCHASE_BURGER_SUCCESS:
+      const newOrder = {
+        ...action.payload.orderData,
+        id: action.payload.orderId,
+      };
+      return {
+        ...state,
+        loading: false,
+        orders: state.orders.concat(newOrder),
+        purchased: true,
+      };
+    case actionTypes.PURCHASE_BURGER_FAIL:
+      return {
+        ...state,
+        loading: false,
+        error: action.payload.error,
+      };
+    case actionTypes.FETCH_ORDERS_SUCCESS: // add
+      return {
+        ...state,
+        loading: false,
+        orders: action.payload.orders,
+      };
+    case actionTypes.FETCH_ORDERS_FAIL: // add
+      return {
+        ...state,
+        loading: false,
+        error: action.payload.error,
+      };
+    default:
+      return state;
+  }
+};
+
+export default reducer;
+```
+
+4. Export the fetchOrders action in the `index.js` file
+
+```js
+// src/store/actions/index.js
+export {
+  addIngredient,
+  removeIngredient,
+  initIngredient,
+} from './burgerBuilder';
+export { purchaseBurger, purchaseInit, fetchOrders } from './order';
+```
+
+5. Connect our application – we want to dispatch the new `fetchOrders` action we've just created (in the `componentDidMount`)
+
+```js
+// src/containers/Orders/Orders.js
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+
+import Order from '../../components/Order/Order';
+import axios from '../../axios-orders';
+import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler';
+import Spinner from '../../components/UI/Spinner/Spinner';
+import * as actions from '../../store/actions/index';
+
+export class Orders extends Component {
+  componentDidMount() {
+    this.props.onFetchOrders();
+  }
+
+  render() {
+    let orders = <Spinner />;
+    if (!this.props.loading) {
+      orders = (
+        <div>
+          {this.props.orders.map((order) => (
+            <Order
+              key={order.id}
+              ingredients={order.ingredients}
+              price={order.price}
+            />
+          ))}
+        </div>
+      );
+    }
+    return orders;
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    orders: state.order.orders,
+    loading: state.order.loading,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onFetchOrders: () => dispatch(actions.fetchOrders()),
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(withErrorHandler(Orders, axios));
+```
+
+### 18. Refactoring Reducers
+
+```js
+// src/store/utilty.js
+export const updateObject = (oldObject, updatedProperties) => {
+  return {
+    ...oldObject,
+    ...updatedProperties,
+  };
+};
+```
+
+```js
+// src/store/reducers/burgerBuilder.js
+import * as actionTypes from '../actions/actionTypes';
+import { updateObject } from '../utilty';
+
+const initialState = {
+  ingredients: null,
+  totalPrice: 4,
+  error: false,
+};
+
+const INGREDIENT_PRICE = {
+  salad: 0.5,
+  bacon: 0.7,
+  cheese: 0.4,
+  meat: 1.3,
+};
+
+const reducer = (state = initialState, action) => {
+  switch (action.type) {
+    case actionTypes.ADD_INGREDIENT:
+      const updatedIngredientAI = {
+        [action.payload.ingredientName]:
+          state.ingredients[action.payload.ingredientName] + 1,
+      };
+      const updatedIngredientsAI = updateObject(
+        state.ingredients,
+        updatedIngredientAI,
+      );
+      const updatedStateAI = {
+        ingredients: updatedIngredientsAI,
+        totalPrice:
+          state.totalPrice + INGREDIENT_PRICE[action.payload.ingredientName],
+      };
+      return updateObject(state, updatedStateAI);
+    case actionTypes.REMOVE_INGREDIENT:
+      const updatedIngredientRI = {
+        [action.payload.ingredientName]:
+          state.ingredients[action.payload.ingredientName] - 1,
+      };
+      const updatedIngredientsRI = updateObject(
+        state.ingredients,
+        updatedIngredientRI,
+      );
+      const updatedStateRI = {
+        ingredients: updatedIngredientsRI,
+        totalPrice:
+          state.totalPrice + INGREDIENT_PRICE[action.payload.ingredientName],
+      };
+      return updateObject(state, updatedStateRI);
+    case actionTypes.SET_INGREDIENTS:
+      return updateObject(state, {
+        ingredients: action.payload.ingredients,
+        totalPrice: 4,
+        error: false,
+      });
+    case actionTypes.FETCH_INGREDIENTS_FAILED:
+      return updateObject(state, { error: true });
+    default:
+      return state;
+  }
+};
+
+export default reducer;
+```
+
+```js
+// src/store/reducers/order.js
+import * as actionTypes from '../actions/actionTypes';
+import { updateObject } from '../utilty';
+
+const initialState = {
+  orders: [],
+  loading: false,
+  purchased: false,
+};
+
+const reducer = (state = initialState, action) => {
+  switch (action.type) {
+    case actionTypes.PURCHASE_INIT:
+      return updateObject(state, { purchased: false });
+    case actionTypes.FETCH_ORDERS_START:
+    case actionTypes.PURCHASE_BURGER_START:
+      return updateObject(state, { loading: true });
+    case actionTypes.PURCHASE_BURGER_SUCCESS:
+      const newOrder = updateObject(action.payload.orderData, {
+        id: action.payload.orderId,
+      });
+
+      return updateObject(state, {
+        loading: false,
+        orders: state.orders.concat(newOrder),
+        purchased: true,
+      });
+    case actionTypes.FETCH_ORDERS_FAIL:
+    case actionTypes.PURCHASE_BURGER_FAIL:
+      return updateObject(state, {
+        loading: false,
+        error: action.payload.error,
+      });
+    case actionTypes.FETCH_ORDERS_SUCCESS:
+      return updateObject(state, {
+        loading: false,
+        orders: action.payload.orders,
+      });
+    default:
+      return state;
+  }
+};
+
+export default reducer;
+```
+
+### 19. Refactoring Reducers Continued
+
+The one thing we can also do is we can extract the logic from our cases into their own functions so that our switch case statement becomes very short. So in the reducer here, we can add a new constant which we could name `addIngredient`, so basically the action type will handle, this is a function which receives the state and the action just like the reducer itself does but there we only want to handle this code.
+
+```js
+// src/store/reducers/burgerBuilder.js
+import * as actionTypes from '../actions/actionTypes';
+import { updateObject } from '../utilty';
+
+//...
+
+// all the logic to add an ingredient
+const addIngredient = (state, action) => {
+  const updatedIngredientAI = {
+    [action.payload.ingredientName]:
+      state.ingredients[action.payload.ingredientName] + 1,
+  };
+  const updatedIngredientsAI = updateObject(
+    state.ingredients,
+    updatedIngredientAI,
+  );
+  const updatedStateAI = {
+    ingredients: updatedIngredientsAI,
+    totalPrice:
+      state.totalPrice + INGREDIENT_PRICE[action.payload.ingredientName],
+  };
+  return updateObject(state, updatedStateAI);
+};
+
+const reducer = (state = initialState, action) => {
+  switch (action.type) {
+    case actionTypes.ADD_INGREDIENT:
+      return addIngredient(state, action); // very short now
+    case actionTypes.REMOVE_INGREDIENT:
+    //...
+    default:
+      return state;
+  }
+};
+
+export default reducer;
+```
