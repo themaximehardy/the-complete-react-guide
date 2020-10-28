@@ -21,7 +21,7 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 15  | [ Adding Redux to our Project ](15-Adding-Redux-to-our-Project/README.md)                                           |
 | 16  | [ Redux Advanced ](16-Redux-Advanced/README.md)                                                                     |
 | 17  | [ Redux Advanced: Burger Project ](17-Redux-Advanced--Burger-Project/README.md)                                     |
-| 18  | [ Adding Authentication to our Burger Project ]()                                                                   |
+| 18  | [ Adding Authentication to our Burger Project ](18-Adding-Authentication-to-our-Burger-Project/README.md)           |
 | 19  | [ Improving our Burger Project ]()                                                                                  |
 | 20  | [ Testing ]()                                                                                                       |
 | 21  | [ Deploying the App to the Web ]()                                                                                  |
