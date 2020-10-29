@@ -692,11 +692,325 @@ We're also doing it for purchasing a burger.
 
 ### 12. Updating the UI Depending on Auth State
 
+We want to change **Authenticate** nav item with **Logout** when we're logged in.
+
+We could transform `src/components/Navigation/NavigationItems/NavigationItems.js` file into a class component and connect it to the store (or using React hook)... but this is not recommended. Why because we want to keep **containers** (smart) and **component** (dumb) separated.
+
+A better idea would be to connect `src/hoc/Layout/Layout.js` (our Layout).
+
+```js
+// src/hoc/Layout/Layout.js
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+//...
+
+export class Layout extends Component {
+  //...
+  render() {
+    return (
+      <Aux>
+        <Toolbar
+          isAuth={this.props.isAuthenticated} // ADD
+          drawerToggleClicked={this.sideDrawerToggleHandler}
+        />
+        <SideDrawer
+          isAuth={this.props.isAuthenticated} // ADD
+          open={this.state.showSideDrawer}
+          closed={this.sideDrawerClosedHandler}
+        />
+        <main className={classes.Content}>{this.props.children}</main>
+      </Aux>
+    );
+  }
+}
+
+// ADD
+const mapStateToProps = (state) => {
+  return {
+    isAuthenticated: state.auth.token !== null,
+  };
+};
+
+export default connect(mapStateToProps)(Layout);
+```
+
+```js
+// src/components/Navigation/Toolbar/Toolbar.js
+import React from 'react';
+import classes from './Toolbar.css';
+import Logo from '../../Logo/Logo';
+import NavigationItems from '../NavigationItems/NavigationItems';
+import DrawerToggle from '../SideDrawer/DrawerToggle/DrawerToggle';
+
+const Toolbar = (props) => {
+  return (
+    <header className={classes.Toolbar}>
+      <DrawerToggle clicked={props.drawerToggleClicked} />
+      <div className={classes.Logo}>
+        <Logo />
+      </div>
+      <nav className={classes.DesktopOnly}>
+        <NavigationItems isAuthenticated={props.isAuth} />
+      </nav>
+    </header>
+  );
+};
+
+export default Toolbar;
+```
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.js
+import React from 'react';
+import classes from './NavigationItems.css';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+const NavigationItems = (props) => {
+  return (
+    <ul className={classes.NavigationItems}>
+      <NavigationItem link="/" exact>
+        Burger&nbsp;Builder
+      </NavigationItem>
+      <NavigationItem link="/orders">Orders</NavigationItem>
+      {!props.isAuthenticated ? (
+        <NavigationItem link="/auth">Authenticate</NavigationItem>
+      ) : (
+        <NavigationItem link="/logout">Logout</NavigationItem>
+      )}
+    </ul>
+  );
+};
+
+export default NavigationItems;
+```
+
 ### 13. Adding a Logout Link
+
+The idea is **redirect** and **dispatch the logout action** when we click on the logout nav item.
+
+```js
+// src/containers/Auth/Logout/Logout.js
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { Redirect } from 'react-router-dom';
+
+import * as actions from '../../../store/actions/index';
+
+export class Logout extends Component {
+  componentDidMount() {
+    this.props.onLogout();
+  }
+
+  render() {
+    return <Redirect to="/" />;
+  }
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onLogout: () => dispatch(actions.logout()),
+  };
+};
+
+export default connect(null, mapDispatchToProps)(Logout);
+```
+
+```js
+// src/App.js
+//...
+class App extends Component {
+  render() {
+    return (
+      <Layout>
+        <Switch>
+          <Route path="/" exact component={BurgerBuilder} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/orders" component={Orders} />
+          <Route path="/auth" component={Auth} />
+          <Route path="/logout" component={Logout} />
+        </Switch>
+      </Layout>
+    );
+  }
+}
+
+export default App;
+```
 
 ### 14. Forwarding Unauthenticated Users
 
+Preventing user not logged in to see **orders** in the `NavigationItems`.
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.js
+//...
+const NavigationItems = (props) => {
+  return (
+    <ul className={classes.NavigationItems}>
+      <NavigationItem link="/" exact>
+        Burger&nbsp;Builder
+      </NavigationItem>
+      {!props.isAuthenticated ? (
+        <NavigationItem link="/auth">Authenticate</NavigationItem>
+      ) : (
+        <React.Fragment>
+          <NavigationItem link="/orders">Orders</NavigationItem>
+          <NavigationItem link="/logout">Logout</NavigationItem>
+        </React.Fragment>
+      )}
+    </ul>
+  );
+};
+//...
+```
+
+Ensure to redirect the user as soon as he is logged in.
+
+```js
+// src/containers/Auth/Auth.js
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { Redirect } from 'react-router-dom';
+//...
+
+class Auth extends Component {
+  //...
+
+  render() {
+    //...
+
+    // ADD
+    let authRedirect = null;
+
+    // ADD
+    if (this.props.isAuthenticated) {
+      authRedirect = <Redirect to="/" />;
+    }
+
+    return (
+      <div className={classes.Auth}>
+        {authRedirect}
+        {errorMessage}
+        <form onSubmit={this.submitHandler}>
+          {form}
+          <Button btnType="Success">SUBMIT</Button>
+        </form>
+        <Button clicked={this.switchAuthModeHandler} btnType="Danger">
+          SWITCH TO {this.state.isSignUp ? 'SIGNIN' : 'SIGNUP'}
+        </Button>
+      </div>
+    );
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    //...
+    isAuthenticated: state.auth.token !== null, // ADD
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onAuth: (email, password, isSignUp) =>
+      dispatch(actions.auth(email, password, isSignUp)),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Auth);
+```
+
+---
+
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.js
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+//...
+
+export class BurgerBuilder extends Component {
+  //...
+
+  purchaseHandler = () => {
+    // ADD this logic
+    if (this.props.isAuthenticated) {
+      this.setState({ purchasing: true });
+    } else {
+      this.props.history.push('/auth');
+    }
+  };
+
+  //...
+
+  render() {
+    //...
+    let burger = (
+      <Aux>
+        <Burger ingredients={ings} />
+        <BuildControls
+          price={this.props.totalPrice}
+          purchaseable={() => this.updatePurchaseState(this.props.ings)}
+          ordered={this.purchaseHandler}
+          isAuth={this.props.isAuthenticated} // ADD
+          ingredientAdded={this.props.onIngredientAdded}
+          ingredientRemoved={this.props.onIngredientRemoved}
+          disabled={disabledInfo}
+        />
+      </Aux>
+    );
+    //...
+    return (
+      <Aux>
+        <Modal
+          show={this.state.purchasing}
+          modalClosed={this.purchaseCancelHandler}
+        >
+          {orderSummary}
+        </Modal>
+        {burger}
+      </Aux>
+    );
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    //...
+    isAuthenticated: state.auth.token !== null, // ADD
+  };
+};
+
+//...
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(withErrorHandler(BurgerBuilder, axios));
+```
+
+```js
+// src/components/Burger/BuildControls/BuildControls.js
+//...
+const BuildControls = (props) => {
+  return (
+    //...
+    <button
+      className={classes.OrderButton}
+      onClick={props.ordered}
+      disabled={!props.purchaseable}
+    >
+      {props.isAuth ? 'ORDER NOW' : 'SIGN UP TO ORDER'}
+    </button>
+    //...
+  );
+};
+
+export default BuildControls;
+```
+
 ### 15. Redirecting the User to the Checkout Page
+
+A lot to do and not new concepts...
 
 ### 16. Persistent Auth State with localStorage
 
