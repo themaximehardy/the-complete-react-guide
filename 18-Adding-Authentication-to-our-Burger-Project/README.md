@@ -1014,10 +1014,318 @@ A lot to do and not new concepts...
 
 ### 16. Persistent Auth State with localStorage
 
+If we are logged in and we reload the page, **the login state is lost**. The reason for this is that when we refresh the page, we download the single page application again, we download the JavaScript again, it gets executed again, it's a totally new application when we look at it like this.
+
+Therefore our state stored in Redux (which is in the end just stored in JavaScript) is lost. So we need it to persist our login state across our sessions and this requires a browser API we can use, **local storage**.
+
+```js
+// src/store/actions/auth.js
+//...
+
+export const logout = () => {
+  localStorage.removeItem('token'); // ADD
+  localStorage.removeItem('userId'); // ADD
+  localStorage.removeItem('expirationDate'); // ADD
+  return {
+    type: actionTypes.AUTH_LOGOUT,
+  };
+};
+
+//...
+
+export const auth = (email, password, isSignUp) => {
+  return (dispatch) => {
+    dispatch(authStart());
+    const authData = {
+      email,
+      password,
+      returnSecureToken: true,
+    };
+    const signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.REACT_APP_API_KEY}`;
+    const signInUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.REACT_APP_API_KEY}`;
+    const url = isSignUp ? signUpUrl : signInUrl;
+    axios
+      .post(url, authData)
+      .then((response) => {
+        const { idToken, localId, expiresIn } = response.data;
+        // ADD
+        const expirationDate = new Date(
+          new Date().getTime() + response.data.expiresIn * 1000,
+        );
+        localStorage.setItem('token', response.data.idToken); // ADD
+        localStorage.setItem('userId', response.data.localId); // ADD
+        localStorage.setItem('expirationDate', expirationDate); // ADD
+        dispatch(authSuccess(idToken, localId));
+        dispatch(checkAuthTimeout(expiresIn));
+      })
+      .catch((error) => {
+        console.log('error: ', error);
+        dispatch(authFail(error.response.data.error));
+      });
+  };
+};
+//...
+// this is a pure utility action creator which dispatches a couple of other actions depending on our current state.
+export const authCheckState = () => {
+  return (dispatch) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      dispatch(logout());
+    } else {
+      const expirationDate = new Date(localStorage.getItem('expirationDate'));
+      if (expirationDate > new Date()) {
+        const userId = localStorage.getItem('userId');
+        dispatch(authSuccess(token, userId));
+        dispatch(
+          checkAuthTimeout(
+            (expirationDate.getTime() - new Date().getTime()) / 1000,
+          ),
+        );
+      } else {
+        dispatch(logout());
+      }
+    }
+  };
+};
+```
+
+```js
+// src/App.js
+import React, { Component } from 'react';
+import { Route, Switch } from 'react-router-dom';
+import { connect } from 'react-redux';
+
+import Layout from './hoc/Layout/Layout';
+import BurgerBuilder from './containers/BurgerBuilder/BurgerBuilder';
+import Checkout from './containers/Checkout/Checkout';
+import Orders from './containers/Orders/Orders';
+import Auth from './containers/Auth/Auth';
+import Logout from './containers/Auth/Logout/Logout';
+import * as actions from './store/actions/index';
+
+class App extends Component {
+  componentDidMount() {
+    this.props.onTryAutoSignup();
+  }
+
+  render() {
+    return (
+      <Layout>
+        <Switch>
+          <Route path="/" exact component={BurgerBuilder} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/orders" component={Orders} />
+          <Route path="/auth" component={Auth} />
+          <Route path="/logout" component={Logout} />
+        </Switch>
+      </Layout>
+    );
+  }
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onTryAutoSignup: () => dispatch(actions.authCheckState()),
+  };
+};
+
+export default connect(null, mapDispatchToProps)(App);
+```
+
 ### 17. Fixing Connect + Routing Errors
+
+The error we're facing has to do with the fact that we're wrapping our `App` container with `connect` and that simply breaks our react router. We can easily fix that though we need to import the withRouter higher order component from react-router-dom and if you get an error like this which is always related to connect wrapping our component which we also want to load with routing and therefore this component doesn't receive our route props, we can simply wrap connect here with withRouter just like that.
+
+And now, `withRouter` will enforce our props being passed down to our app component still and therefore the react router is back on the page and we'll know what's getting loaded so with that, we're working again.
+
+```js
+// src/App.js
+import React, { Component } from 'react';
+import { Route, Switch, withRouter } from 'react-router-dom';
+import { connect } from 'react-redux';
+
+import Layout from './hoc/Layout/Layout';
+import BurgerBuilder from './containers/BurgerBuilder/BurgerBuilder';
+import Checkout from './containers/Checkout/Checkout';
+import Orders from './containers/Orders/Orders';
+import Auth from './containers/Auth/Auth';
+import Logout from './containers/Auth/Logout/Logout';
+import * as actions from './store/actions/index';
+
+class App extends Component {
+  componentDidMount() {
+    this.props.onTryAutoSignup();
+  }
+
+  render() {
+    return (
+      <Layout>
+        <Switch>
+          <Route path="/" exact component={BurgerBuilder} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/orders" component={Orders} />
+          <Route path="/auth" component={Auth} />
+          <Route path="/logout" component={Logout} />
+        </Switch>
+      </Layout>
+    );
+  }
+}
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onTryAutoSignup: () => dispatch(actions.authCheckState()),
+  };
+};
+
+export default withRouter(connect(null, mapDispatchToProps)(App));
+```
 
 ### 18. Ensuring App Security
 
+Now let's talk about security a little bit, let's log in again. As we learned, we manage our auth state with the token, and we automatically log the user in if we have a valid token. Then, that token is only valid for 60 minutes though, that is for security reasons because if the token gets stolen, anyone can access our data, of course, now that sounds very bad.
+
+Keep in mind though it's stored in our application in local storage, local storage can be accessed with cross-site scripting attacks, and React prevents cross-site scripting attacks. We can't output insecure code by default. So we got a lot of protection from that side, so our data and local storage should be safe, an additional safety net then is again that the token expires after one hour.
+
+Having a token which never expires and which we can exchange for a token which gives we access to everything could lead to security issues or at least we should be very careful about protecting it if we are using the refresh token (via Firebase).
+
+We can enhance the user experience by using the refresh token, we can essentially make sure the user is never logged out because as the refreshed token never expires, we can refresh the main token even after a week check for the token is valid, it isn't, take the refresh token and get a new one but due to that security thing, I opted not to use it. I wanted to bring this to our attention.
+
 ### 19. Guarding Routes
 
+There are two more things we want to do: (1) we want to store the `userId` in any order we place so that on the backend in the orders, we also store the `userId` of the user who made that order. We can then also make sure we only fetch orders by that user. (2) We want to make sure that we can only visit the orders page and the checkout page even though we do redirect there if we are not building a burger but that we can visit both only if we are logged in.
+
+```js
+// src/App.js
+import React, { Component } from 'react';
+import { Route, Switch, withRouter, Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
+
+import Layout from './hoc/Layout/Layout';
+import BurgerBuilder from './containers/BurgerBuilder/BurgerBuilder';
+import Checkout from './containers/Checkout/Checkout';
+import Orders from './containers/Orders/Orders';
+import Auth from './containers/Auth/Auth';
+import Logout from './containers/Auth/Logout/Logout';
+import * as actions from './store/actions/index';
+
+class App extends Component {
+  componentDidMount() {
+    this.props.onTryAutoSignup();
+  }
+
+  render() {
+    let routes = (
+      <Switch>
+        <Route path="/" exact component={BurgerBuilder} />
+        <Route path="/auth" component={Auth} />
+        <Redirect to="/" />
+      </Switch>
+    );
+
+    if (this.props.isAuthenticated) {
+      routes = (
+        <Switch>
+          <Route path="/" exact component={BurgerBuilder} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/orders" component={Orders} />
+          <Route path="/logout" component={Logout} />
+          <Redirect to="/" />
+        </Switch>
+      );
+    }
+    return <Layout>{routes}</Layout>;
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    isAuthenticated: state.auth.token !== null,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onTryAutoSignup: () => dispatch(actions.authCheckState()),
+  };
+};
+
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App));
+```
+
 ### 20. Displaying User Specific Orders
+
+```js
+// In Firebase rule
+{
+  "rules": {
+    "ingredients": {
+      ".read": true,
+    	".write": true,
+    },
+    "orders": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+        ".indexOn": ["userId"]
+    }
+  }
+}
+```
+
+```js
+// src/store/actions/order.js
+//...
+export const fetchOrders = (token, userId) => {
+  return (dispatch) => {
+    dispatch(fetchOrdersStart());
+    const queryParams = `?auth=${token}&orderBy="userId"&equalTo="${userId}"`;
+    axios
+      .get(`/orders.json${queryParams}`)
+      .then(({ data }) => {
+        const fetchedOrders = [];
+        for (const key in data) {
+          fetchedOrders.push({ ...data[key], id: key });
+        }
+        dispatch(fetchOrdersSuccess(fetchedOrders));
+      })
+      .catch((error) => {
+        dispatch(fetchOrdersFail(error.message));
+      });
+  };
+};
+//...
+```
+
+```js
+// src/containers/Orders/Orders.js
+//...
+export class Orders extends Component {
+  componentDidMount() {
+    this.props.onFetchOrders(this.props.token, this.props.userId); // ADD the userId
+  }
+
+  render() {
+    //...
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    //...
+    token: state.auth.token,
+    userId: state.auth.userId, // ADD
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    onFetchOrders: (token, userId) =>
+      dispatch(actions.fetchOrders(token, userId)), // ADD userId
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(withErrorHandler(Orders, axios));
+```
