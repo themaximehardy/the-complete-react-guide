@@ -23,7 +23,7 @@ _Notes based on Maximilian Schwarzmüller's fantastic course._
 | 17  | [ Redux Advanced: Burger Project ](17-Redux-Advanced--Burger-Project/README.md)                                     |
 | 18  | [ Adding Authentication to our Burger Project ](18-Adding-Authentication-to-our-Burger-Project/README.md)           |
 | 19  | [ Improving our Burger Project ](19-Improving-our-Burger-Project/README.md)                                         |
-| 20  | [ Testing ]()                                                                                                       |
+| 20  | [ Testing ](20-Testing/README.md)                                                                                   |
 | 21  | [ Deploying the App to the Web ]()                                                                                  |
 | 22  | [ Bonus: Working with Webpack ]()                                                                                   |
 | 23  | [ Bonus: Next.js ]()                                                                                                |
