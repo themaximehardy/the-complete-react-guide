@@ -71,12 +71,287 @@ These are things we want to test in our unit tests.
 
 ### 5. Writing our First Test
 
+```sh
+yarn add enzyme react-test-renderer enzyme-adapter-react-16
+```
+
+Let's start by testing a (functional) component, then a container and finally Redux.
+
+1. Functional component – `NavigationItems`, and create in the same folder `NavigationItems.test.js`.
+
+Now we want to create an instance of this component (`<NavigationItems />`) as it would be rendered to the DOM, to the real DOM through React and then have a look into the rendered component and see what was rendered for the case that the `isAuthenticated` prop is `false`.
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.test.js
+describe('<NavigationItems />', () => {
+  it('should render two <NavigationItems /> elements if not authenticated', () => {
+    //...
+  });
+});
+```
+
+Now we might think that we need to render the entire React application because `NavigationItems` is just one tiny piece in the entire React application, that is where `enzyme` comes in, this testing package. **Enzyme allows us to just render this navigation items component standalone independent** of the entire other React application, that's the whole idea behind the enzyme package, that **we can really write unit tests**, **isolated tests**, tests where we don't need to render the complete React app.
+
+Let's **import** and **configure** `enzyme`.
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.test.js
+import { configure } from 'enzyme'; // import configure
+import Adapter from 'enzyme-adapter-react-16'; // import Adapter
+
+configure({ adapter: new Adapter() }); // we execute `configure` where we pass an object
+
+describe('<NavigationItems />', () => {
+  it('should render two <NavigationItems /> elements if not authenticated', () => {});
+});
+```
+
+**Shallow** is the best way of rendering React components in many circumstances, `enzyme` offers two alternatives which we'll also talk about later but `shallow` is the one we should use as often as possible because one thing shallow does is it renders the component with all its content **but the content isn't deeply rendered**.
+
+So the `NavigationItems` component here has `NavigationItem` components but these are **only rendered as placeholders**, the content of them isn't rendered and that of course again is important for creating isolated tests where we don't then render a whole sub tree of components, we just want to render this component and know what's inside of it without rendering everything which is nested inside its included components.
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.test.js
+import React from 'react';
+
+import { configure, shallow } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+configure({ adapter: new Adapter() });
+
+describe('<NavigationItems />', () => {
+  it('should render two <NavigationItems /> elements if not authenticated', () => {
+    const wrapper = shallow(<NavigationItems />);
+    expect(wrapper.find(NavigationItem)).toHaveLength(2);
+  });
+});
+```
+
+```sh
+# yarn test
+
+ PASS  src/components/Navigation/NavigationItems/NavigationItems.test.js
+  <NavigationItems />
+    ✓ should render two <NavigationItems /> elements if not authenticated (30ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        0.869s
+Ran all test suites related to changed files.
+
+Watch Usage: Press w to show more.
+```
+
 ### 6. Testing Components Continued
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.test.js
+import React from 'react';
+
+import { configure, shallow } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+configure({ adapter: new Adapter() });
+
+describe('<NavigationItems />', () => {
+  it('should render two <NavigationItems /> elements if not authenticated', () => {
+    const wrapper = shallow(<NavigationItems />);
+    expect(wrapper.find(NavigationItem)).toHaveLength(2);
+  });
+
+  it('should render three <NavigationItems /> elements if authenticated', () => {
+    const wrapper = shallow(<NavigationItems isAuthenticated />);
+    expect(wrapper.find(NavigationItem)).toHaveLength(3);
+  });
+});
+```
+
+Or let's improve this...
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.test.js
+import React from 'react';
+
+import { configure, shallow } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+configure({ adapter: new Adapter() });
+
+describe('<NavigationItems />', () => {
+  let wrapper;
+  beforeEach(() => {
+    wrapper = shallow(<NavigationItems />);
+  });
+
+  it('should render two <NavigationItems /> elements if not authenticated', () => {
+    expect(wrapper.find(NavigationItem)).toHaveLength(2);
+  });
+
+  it('should render three <NavigationItems /> elements if authenticated', () => {
+    // wrapper = shallow(<NavigationItems isAuthenticated />);
+    wrapper.setProps({ isAuthenticated: true });
+    expect(wrapper.find(NavigationItem)).toHaveLength(3);
+  });
+});
+```
 
 ### 7. Jest and Enzyme Documentations
 
+Look at the docs: **Jest** and **Enzyme** (check the above links).
+
+```js
+// src/components/Navigation/NavigationItems/NavigationItems.test.js
+import React from 'react';
+
+import { configure, shallow } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+
+import NavigationItems from './NavigationItems';
+import NavigationItem from './NavigationItem/NavigationItem';
+
+configure({ adapter: new Adapter() });
+
+describe('<NavigationItems />', () => {
+  let wrapper;
+  beforeEach(() => {
+    wrapper = shallow(<NavigationItems />);
+  });
+
+  it('should render two <NavigationItems /> elements if not authenticated', () => {
+    expect(wrapper.find(NavigationItem)).toHaveLength(2);
+  });
+
+  it('should render three <NavigationItems /> elements if authenticated', () => {
+    // wrapper = shallow(<NavigationItems isAuthenticated />);
+    wrapper.setProps({ isAuthenticated: true });
+    expect(wrapper.find(NavigationItem)).toHaveLength(3);
+  });
+
+  it('should render three <NavigationItems /> elements if authenticated', () => {
+    wrapper.setProps({ isAuthenticated: true });
+    expect(
+      wrapper.contains(<NavigationItem link="/logout">Logout</NavigationItem>),
+    ).toEqual(true);
+  });
+});
+```
+
 ### 8. Testing Components Correctly
+
+**Writing good tests is complicated**, it's easy to write 100 tests for a given component and test all kind of things while it's missing the one important thing we should have tested and on the other way around. We might only need one test to really verify if a component behaves the way we want it to behave.
+
+The best thing we can do it's practicing and writing a lot of tests for different components, testing for different things no matter if they makes sense to be tested or not, learn how to test how to think in test environments and learn how to use the different functions provided by **Jest** and **Enzyme**.
+
+It really is all about practicing and testing takes experience, the best way to start with testing is to **always have a look at our component or our function** we are testing and **see what are the crucial things that change depending on some external influences** like here, the `isAuthenticated` part which changes what gets rendered.
+
+And then this should be what we write the test for, so that whenever we change something in the navigation items component and we accidentally mess up we got failed tests.
 
 ### 9. Testing Containers
 
+We had a look at how we test components, let's now have a look at containers like the `BurgerBuilder`, how do we test these?
+
+The tricky part about containers is that **they are connected to the Redux store** and the Redux store has some external influence on this component. If it weren't connected, testing it would just be very equal to the other components because then yes it might have state but enzyme actually also has methods to handle this, just as we have `setProps`, we also have `setState` to simulate different states in that component. So the **tricky thing really is the Redux store**.
+
+The good thing is we don't really need to test the connection of this container to the Redux store, we can rely on the Redux store to work correctly, and then **in the end we only receive data from the store as props to this container**. So we're back to the previous world, we can just simulate props in our tests because we want to simulate different outcomes in different states of props anyways, so that **we don't want to connect that to some real store**.
+
+So what we really need to do is we need to get access to the component behind this container... and one convenient trick is to simply export this `BurgerBuilder` class, so simply add the export statement in front of this.
+
+```js
+//...
+export class BurgerBuilder extends Component {...} // export the class
+//...
+// export the component connected
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(withErrorHandler(BurgerBuilder, axios));
+```
+
+```js
+// src/containers/BurgerBuilder/BurgerBuilder.test.js
+import React from 'react';
+
+import { configure, shallow } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+
+import { BurgerBuilder } from './BurgerBuilder';
+import BuildControls from '../../components/Burger/BuildControls/BuildControls';
+
+configure({ adapter: new Adapter() });
+
+describe('<BurgerBuilder />', () => {
+  let wrapper;
+  beforeEach(() => {
+    wrapper = shallow(<BurgerBuilder onInitIngredients={() => {}} />);
+  });
+
+  it('should render <BuildControls /> when receiving ingredients', () => {
+    wrapper.setProps({ ings: { salad: 0 } });
+    expect(wrapper.find(BuildControls)).toHaveLength(1);
+  });
+});
+```
+
 ### 10. How to Test Redux?
+
+We learned how to test containers and we mentioned that the important part is that we don't test the connection to Redux... How do we test Redux then, do we test it at all?
+
+**The answer is yes we test it** but we have to be careful about what we test.
+
+We probably don't want to test very complex chains of actions and reducers and state, **in the end the reducers are the meat we want to test especially if we follow the pattern of not putting too much logic in the action creators**. Then testing reducers is super simple, there's synchronous so we don't have to deal with async code and there are just functions, we pass something in, we get something out.
+
+So we add an `auth.test.js` file, here we don't even need enzyme because we're not testing any React components, we don't need to render anything, we just test normal JavaScript code, we test functions, the reducer function.
+
+```js
+// src/store/reducers/auth.test.js
+import reducer from './auth';
+import * as actionTypes from '../actions/actionTypes';
+
+describe('auth reducer', () => {
+  it('should return the initial state', () => {
+    expect(reducer(undefined, {})).toEqual({
+      token: null,
+      userId: null,
+      error: null,
+      loading: false,
+      authRedirectPath: '/',
+    });
+  });
+
+  it('should store the token upon login', () => {
+    expect(
+      reducer(
+        {
+          token: null,
+          userId: null,
+          error: null,
+          loading: false,
+          authRedirectPath: '/',
+        },
+        {
+          type: actionTypes.AUTH_SUCCESS,
+          payload: { idToken: 'someIdToken', userId: 'someUserId' },
+        },
+      ),
+    ).toEqual({
+      token: 'someIdToken',
+      userId: 'someUserId',
+      error: null,
+      loading: false,
+      authRedirectPath: '/',
+    });
+  });
+});
+```
+
+This is how we can also test reducers, they are pure functions and therefore very simple to test.
